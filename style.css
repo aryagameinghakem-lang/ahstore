@@ -1063,3 +1063,30 @@ body.rtl .modal-close {
   }
 }
 ```
+```css
+/* ===== CART MUST START CLOSED ===== */
+
+.cart-drawer.hidden {
+  display: none !important;
+}
+
+.cart-drawer {
+  display: flex;
+}
+
+/* Make sure the overlay is hidden until cart is opened */
+#cartOverlay.hidden {
+  display: none !important;
+}
+
+/* Header always stays above the page */
+.header {
+  position: sticky;
+  z-index: 5000;
+}
+
+.header-actions {
+  position: relative;
+  z-index: 5001;
+}
+```
