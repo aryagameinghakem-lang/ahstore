@@ -27,10 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-/* =========================================
-   SETUP BUTTONS
-========================================= */
-
 function setupButtons() {
 
   $("languageBtn")?.addEventListener(
@@ -120,9 +116,7 @@ function setupButtons() {
 }
 
 
-/* =========================================
-   LOAD PRODUCTS
-========================================= */
+/* PRODUCTS */
 
 async function loadProducts() {
 
@@ -140,13 +134,11 @@ async function loadProducts() {
       error
     );
 
-    if ($("productsGrid")) {
-      $("productsGrid").innerHTML = `
-        <div class="loading">
-          Unable to load products.
-        </div>
-      `;
-    }
+    $("productsGrid").innerHTML = `
+      <div class="loading">
+        Unable to load products.
+      </div>
+    `;
 
     return;
   }
@@ -162,10 +154,6 @@ async function loadProducts() {
   renderAdminProducts();
 }
 
-
-/* =========================================
-   RENDER PRODUCTS
-========================================= */
 
 function renderProducts(list) {
 
@@ -199,7 +187,6 @@ function renderProducts(list) {
     card.className =
       "product-card";
 
-    /* PRODUCT CARD CLICK */
 
     card.addEventListener(
       "click",
@@ -210,8 +197,6 @@ function renderProducts(list) {
       }
     );
 
-
-    /* IMAGE */
 
     if (product.image_url) {
 
@@ -244,16 +229,12 @@ function renderProducts(list) {
     }
 
 
-    /* INFO */
-
     const info =
       document.createElement("div");
 
     info.className =
       "product-info";
 
-
-    /* BRAND */
 
     const brand =
       document.createElement("div");
@@ -264,10 +245,10 @@ function renderProducts(list) {
     brand.textContent =
       product.brand || "";
 
-    info.appendChild(brand);
+    info.appendChild(
+      brand
+    );
 
-
-    /* NAME */
 
     const name =
       document.createElement("h3");
@@ -278,10 +259,10 @@ function renderProducts(list) {
     name.textContent =
       product.name || "";
 
-    info.appendChild(name);
+    info.appendChild(
+      name
+    );
 
-
-    /* DETAILS */
 
     const details =
       document.createElement("div");
@@ -342,10 +323,11 @@ function renderProducts(list) {
       );
     }
 
-    info.appendChild(details);
 
+    info.appendChild(
+      details
+    );
 
-    /* PRICE */
 
     const price =
       document.createElement("div");
@@ -380,13 +362,18 @@ function renderProducts(list) {
       " IQD";
 
 
-    price.appendChild(usd);
-    price.appendChild(iqd);
+    price.appendChild(
+      usd
+    );
 
-    info.appendChild(price);
+    price.appendChild(
+      iqd
+    );
 
+    info.appendChild(
+      price
+    );
 
-    /* ADD TO CART */
 
     const button =
       document.createElement("button");
@@ -413,18 +400,23 @@ function renderProducts(list) {
     );
 
 
-    info.appendChild(button);
+    info.appendChild(
+      button
+    );
 
-    card.appendChild(info);
 
-    container.appendChild(card);
+    card.appendChild(
+      info
+    );
+
+    container.appendChild(
+      card
+    );
   });
 }
 
 
-/* =========================================
-   SEARCH / FILTER
-========================================= */
+/* SEARCH */
 
 function filterProducts() {
 
@@ -449,33 +441,27 @@ function filterProducts() {
         `.toLowerCase();
 
 
-        const searchMatch =
-          text.includes(search);
-
-
-        const categoryMatch =
-          category === "all" ||
-          String(
-            product.category || ""
-          ).toLowerCase() ===
-            category.toLowerCase();
-
-
         return (
-          searchMatch &&
-          categoryMatch
+          text.includes(search) &&
+          (
+            category === "all" ||
+            String(
+              product.category || ""
+            ).toLowerCase() ===
+              category.toLowerCase()
+          )
         );
       }
     );
 
 
-  renderProducts(filtered);
+  renderProducts(
+    filtered
+  );
 }
 
 
-/* =========================================
-   PRODUCT DETAILS
-========================================= */
+/* DETAILS */
 
 function openProductDetails(id) {
 
@@ -490,9 +476,8 @@ function openProductDetails(id) {
   if (!product) {
 
     console.error(
-      "Product not found for details:",
-      id,
-      products
+      "Product not found:",
+      id
     );
 
     return;
@@ -509,7 +494,7 @@ function openProductDetails(id) {
   if (!modal || !overlay) {
 
     console.error(
-      "Product details HTML is missing."
+      "Product details HTML missing."
     );
 
     return;
@@ -544,52 +529,29 @@ function openProductDetails(id) {
   }
 
 
-  if ($("detailsBrand")) {
+  $("detailsBrand").textContent =
+    product.brand || "";
 
-    $("detailsBrand").textContent =
-      product.brand || "";
-  }
+  $("detailsName").textContent =
+    product.name || "";
 
+  $("detailsCategory").textContent =
+    product.category || "";
 
-  if ($("detailsName")) {
+  $("detailsConnection").textContent =
+    product.connection || "";
 
-    $("detailsName").textContent =
-      product.name || "";
-  }
+  $("detailsUSD").textContent =
+    "$" +
+    Number(
+      product.price_usd || 0
+    ).toFixed(2);
 
-
-  if ($("detailsCategory")) {
-
-    $("detailsCategory").textContent =
-      product.category || "";
-  }
-
-
-  if ($("detailsConnection")) {
-
-    $("detailsConnection").textContent =
-      product.connection || "";
-  }
-
-
-  if ($("detailsUSD")) {
-
-    $("detailsUSD").textContent =
-      "$" +
-      Number(
-        product.price_usd || 0
-      ).toFixed(2);
-  }
-
-
-  if ($("detailsIQD")) {
-
-    $("detailsIQD").textContent =
-      Number(
-        product.price_iqd || 0
-      ).toLocaleString() +
-      " IQD";
-  }
+  $("detailsIQD").textContent =
+    Number(
+      product.price_iqd || 0
+    ).toLocaleString() +
+    " IQD";
 
 
   const switchRow =
@@ -597,25 +559,21 @@ function openProductDetails(id) {
 
 
   if (
-    switchRow &&
+    product.switch_type &&
     String(
       product.category
     ).toLowerCase() ===
-      "keyboard" &&
-    product.switch_type
+      "keyboard"
   ) {
 
     switchRow.classList.remove(
       "hidden"
     );
 
-    if ($("detailsSwitch")) {
+    $("detailsSwitch").textContent =
+      product.switch_type;
 
-      $("detailsSwitch").textContent =
-        product.switch_type;
-    }
-
-  } else if (switchRow) {
+  } else {
 
     switchRow.classList.add(
       "hidden"
@@ -623,22 +581,15 @@ function openProductDetails(id) {
   }
 
 
-  const detailsCartButton =
-    $("detailsAddCart");
+  $("detailsAddCart").onclick =
+    () => {
 
+      addToCart(
+        product.id
+      );
 
-  if (detailsCartButton) {
-
-    detailsCartButton.onclick =
-      () => {
-
-        addToCart(
-          product.id
-        );
-
-        closeProductDetails();
-      };
-  }
+      closeProductDetails();
+    };
 
 
   modal.classList.remove(
@@ -671,17 +622,9 @@ function closeProductDetails() {
 }
 
 
-/* =========================================
-   ADD TO CART
-========================================= */
+/* CART */
 
 function addToCart(id) {
-
-  console.log(
-    "Adding product:",
-    id
-  );
-
 
   const product =
     products.find(
@@ -697,12 +640,6 @@ function addToCart(id) {
       "Product not found:",
       id,
       products
-    );
-
-    alert(
-      language === "ku"
-        ? "بەرهەمەکە نەدۆزرایەوە."
-        : "Product could not be found."
     );
 
     return;
@@ -757,10 +694,6 @@ function addToCart(id) {
 }
 
 
-/* =========================================
-   REMOVE CART
-========================================= */
-
 function removeFromCart(id) {
 
   cart =
@@ -775,10 +708,6 @@ function removeFromCart(id) {
   renderCart();
 }
 
-
-/* =========================================
-   QUANTITY
-========================================= */
 
 function changeQuantity(
   id,
@@ -800,7 +729,9 @@ function changeQuantity(
     Number(amount);
 
 
-  if (item.quantity <= 0) {
+  if (
+    item.quantity <= 0
+  ) {
 
     removeFromCart(id);
 
@@ -814,10 +745,6 @@ function changeQuantity(
 }
 
 
-/* =========================================
-   SAVE CART
-========================================= */
-
 function saveCart() {
 
   localStorage.setItem(
@@ -826,10 +753,6 @@ function saveCart() {
   );
 }
 
-
-/* =========================================
-   RENDER CART
-========================================= */
 
 function renderCart() {
 
@@ -876,13 +799,11 @@ function renderCart() {
       </div>
     `;
 
-
     if (total) {
 
       total.textContent =
         "$0";
     }
-
 
     return;
   }
@@ -890,7 +811,8 @@ function renderCart() {
 
   let totalUSD = 0;
 
-  container.innerHTML = "";
+  container.innerHTML =
+    "";
 
 
   cart.forEach(
@@ -911,12 +833,12 @@ function renderCart() {
         price * quantity;
 
 
-      const cartItem =
+      const row =
         document.createElement(
           "div"
         );
 
-      cartItem.className =
+      row.className =
         "cart-item";
 
 
@@ -930,10 +852,7 @@ function renderCart() {
         image.src =
           item.image_url;
 
-        image.alt =
-          "";
-
-        cartItem.appendChild(
+        row.appendChild(
           image
         );
       }
@@ -1073,17 +992,16 @@ function renderCart() {
       );
 
 
-      cartItem.appendChild(
+      row.appendChild(
         info
       );
 
-      cartItem.appendChild(
+      row.appendChild(
         remove
       );
 
-
       container.appendChild(
-        cartItem
+        row
       );
     }
   );
@@ -1097,10 +1015,6 @@ function renderCart() {
   }
 }
 
-
-/* =========================================
-   CART OPEN / CLOSE
-========================================= */
 
 function openCart() {
 
@@ -1130,9 +1044,7 @@ function closeCart() {
 }
 
 
-/* =========================================
-   WHATSAPP
-========================================= */
+/* WHATSAPP */
 
 function checkoutWhatsApp() {
 
@@ -1195,25 +1107,19 @@ function checkoutWhatsApp() {
       : "\nCash on delivery.";
 
 
-  const url =
-    "https://wa.me/" +
-    WHATSAPP +
-    "?text=" +
-    encodeURIComponent(
-      message
-    );
-
-
   window.open(
-    url,
+    "https://wa.me/" +
+      WHATSAPP +
+      "?text=" +
+      encodeURIComponent(
+        message
+      ),
     "_blank"
   );
 }
 
 
-/* =========================================
-   LANGUAGE
-========================================= */
+/* LANGUAGE */
 
 function toggleLanguage() {
 
@@ -1306,9 +1212,7 @@ function applyLanguage() {
 }
 
 
-/* =========================================
-   ADMIN
-========================================= */
+/* ADMIN */
 
 function openAdmin() {
 
@@ -1381,10 +1285,6 @@ function showAdminPanel() {
 }
 
 
-/* =========================================
-   ADMIN LOGIN
-========================================= */
-
 async function loginAdmin(
   event
 ) {
@@ -1440,10 +1340,6 @@ async function loginAdmin(
 }
 
 
-/* =========================================
-   LOGOUT
-========================================= */
-
 async function logoutAdmin() {
 
   await db.auth.signOut();
@@ -1452,9 +1348,7 @@ async function logoutAdmin() {
 }
 
 
-/* =========================================
-   SAVE PRODUCT
-========================================= */
+/* SAVE PRODUCT */
 
 async function saveProduct(
   event
@@ -1513,8 +1407,6 @@ async function saveProduct(
   let imageUrl = "";
 
 
-  /* KEEP OLD IMAGE WHEN EDITING */
-
   if (editingId !== null) {
 
     const oldProduct =
@@ -1530,8 +1422,6 @@ async function saveProduct(
       "";
   }
 
-
-  /* UPLOAD NEW IMAGE */
 
   if (imageFile) {
 
@@ -1682,14 +1572,11 @@ async function saveProduct(
 
   updateSwitchField();
 
-
   await loadProducts();
 }
 
 
-/* =========================================
-   ADMIN PRODUCT LIST
-========================================= */
+/* ADMIN LIST */
 
 function renderAdminProducts() {
 
@@ -1725,8 +1612,6 @@ function renderAdminProducts() {
         "admin-product";
 
 
-      /* IMAGE */
-
       if (product.image_url) {
 
         const image =
@@ -1745,8 +1630,6 @@ function renderAdminProducts() {
         );
       }
 
-
-      /* INFO */
 
       const info =
         document.createElement(
@@ -1792,8 +1675,6 @@ function renderAdminProducts() {
       );
 
 
-      /* ACTIONS */
-
       const actions =
         document.createElement(
           "div"
@@ -1802,8 +1683,6 @@ function renderAdminProducts() {
       actions.className =
         "admin-actions";
 
-
-      /* EDIT */
 
       const editButton =
         document.createElement(
@@ -1819,18 +1698,12 @@ function renderAdminProducts() {
 
       editButton.addEventListener(
         "click",
-        (event) => {
-
-          event.stopPropagation();
-
+        () =>
           editProduct(
             product.id
-          );
-        }
+          )
       );
 
-
-      /* DELETE */
 
       const deleteButton =
         document.createElement(
@@ -1846,14 +1719,10 @@ function renderAdminProducts() {
 
       deleteButton.addEventListener(
         "click",
-        (event) => {
-
-          event.stopPropagation();
-
+        () =>
           deleteProduct(
             product.id
-          );
-        }
+          )
       );
 
 
@@ -1883,9 +1752,7 @@ function renderAdminProducts() {
 }
 
 
-/* =========================================
-   EDIT PRODUCT
-========================================= */
+/* EDIT */
 
 function editProduct(id) {
 
@@ -1900,7 +1767,7 @@ function editProduct(id) {
   if (!product) {
 
     console.error(
-      "Product not found for edit:",
+      "Product not found:",
       id
     );
 
@@ -1912,44 +1779,29 @@ function editProduct(id) {
     product.id;
 
 
-  $("productName")
-    .value =
-      product.name || "";
+  $("productName").value =
+    product.name || "";
 
+  $("productBrand").value =
+    product.brand || "";
 
-  $("productBrand")
-    .value =
-      product.brand || "";
+  $("productCategory").value =
+    product.category ||
+    "other";
 
+  $("productUSD").value =
+    product.price_usd || "";
 
-  $("productCategory")
-    .value =
-      product.category ||
-      "other";
+  $("productIQD").value =
+    product.price_iqd || "";
 
+  $("productConnection").value =
+    product.connection ||
+    "Wired";
 
-  $("productUSD")
-    .value =
-      product.price_usd ||
-      "";
-
-
-  $("productIQD")
-    .value =
-      product.price_iqd ||
-      "";
-
-
-  $("productConnection")
-    .value =
-      product.connection ||
-      "Wired";
-
-
-  $("productSwitch")
-    .value =
-      product.switch_type ||
-      "";
+  $("productSwitch").value =
+    product.switch_type ||
+    "";
 
 
   $("saveProductBtn")
@@ -1974,9 +1826,7 @@ function editProduct(id) {
 }
 
 
-/* =========================================
-   CANCEL EDIT
-========================================= */
+/* CANCEL EDIT */
 
 function cancelEdit() {
 
@@ -2009,9 +1859,7 @@ function cancelEdit() {
 }
 
 
-/* =========================================
-   DELETE PRODUCT
-========================================= */
+/* DELETE */
 
 async function deleteProduct(
   id
@@ -2028,7 +1876,7 @@ async function deleteProduct(
   if (!product) {
 
     console.error(
-      "Product not found for delete:",
+      "Product not found:",
       id
     );
 
@@ -2036,13 +1884,14 @@ async function deleteProduct(
   }
 
 
-  const confirmed =
-    confirm(
+  if (
+    !confirm(
       `Delete "${product.name}"?`
-    );
+    )
+  ) {
 
-
-  if (!confirmed) return;
+    return;
+  }
 
 
   const {
@@ -2072,9 +1921,7 @@ async function deleteProduct(
 }
 
 
-/* =========================================
-   SWITCH FIELD
-========================================= */
+/* SWITCH FIELD */
 
 function updateSwitchField() {
 
@@ -2097,9 +1944,7 @@ function updateSwitchField() {
 }
 
 
-/* =========================================
-   IMAGE PREVIEW
-========================================= */
+/* IMAGE */
 
 function previewImage() {
 
@@ -2126,62 +1971,4 @@ function previewImage() {
     "hidden"
   );
 }
-
-
-/* =========================================
-   ESCAPE HTML
-========================================= */
-
-function escapeHTML(value) {
-
-  return String(
-    value ?? ""
-  )
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-    .replace(
-      /'/g,
-      "&#039;"
-    );
-}
-
-
-/* =========================================
-   GLOBAL FUNCTIONS
-========================================= */
-
-window.addToCart =
-  addToCart;
-
-window.removeFromCart =
-  removeFromCart;
-
-window.changeQuantity =
-  changeQuantity;
-
-window.editProduct =
-  editProduct;
-
-window.deleteProduct =
-  deleteProduct;
-
-window.openProductDetails =
-  openProductDetails;
-
-window.closeProductDetails =
-  closeProductDetails;
 ```
