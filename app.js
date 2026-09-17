@@ -1,201 +1,341 @@
 ```javascript
+// =====================================================
+// AH STORE - BRAND NEW APP.JS
+// =====================================================
+
 const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
+const WHATSAPP_NUMBER = "9647701068935";
 
-const supabaseClient = window.supabase.createClient(
+const db = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
 
-const WHATSAPP_NUMBER = "9647701068935";
+// =====================================================
+// STATE
+// =====================================================
 
 let products = [];
-let cart = JSON.parse(localStorage.getItem("ahstore_cart") || "[]");
-let currentLanguage = localStorage.getItem("ahstore_language") || "en";
-let currentProduct = null;
-let editingProductId = null;
+let cart = [];
+let language = localStorage.getItem("ahstore_language") || "en";
+let selectedProduct = null;
+let editingId = null;
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupEvents();
-  updateLanguage();
-  closeCartDrawer();
-  loadProducts();
-  checkAdminSession();
+// Load saved cart safely
+try {
+  cart = JSON.parse(
+    localStorage.getItem("ahstore_cart") || "[]"
+  );
+
+  if (!Array.isArray(cart)) {
+    cart = [];
+  }
+} catch {
+  cart = [];
+}
+
+// =====================================================
+// START
+// =====================================================
+
+document.addEventListener("DOMContentLoaded", startApp);
+
+async function startApp() {
+  console.log("AH STORE starting...");
+
+  setupButtons();
+  setLanguage();
+  closeCart();
+  closeProductModal();
+  closeAdmin();
+
   updateCart();
-});
 
-function setupEvents() {
-  const languageBtn = document.getElementById("languageBtn");
-  const cartBtn = document.getElementById("cartBtn");
-  const closeCart = document.getElementById("closeCart");
+  await loadProducts();
+  await checkLogin();
+
+  console.log("AH STORE ready.");
+}
+
+// =====================================================
+// BUTTONS / EVENTS
+// =====================================================
+
+function setupButtons() {
+  const languageButton = document.getElementById("languageBtn");
+  const cartButton = document.getElementById("cartBtn");
+  const closeCartButton = document.getElementById("closeCart");
   const cartOverlay = document.getElementById("cartOverlay");
-  const whatsappOrder = document.getElementById("whatsappOrder");
-  const adminBtn = document.getElementById("adminBtn");
-  const closeAdmin = document.getElementById("closeAdmin");
+
+  const whatsappButton =
+    document.getElementById("whatsappOrder");
+
+  const adminButton = document.getElementById("adminBtn");
+  const closeAdminButton = document.getElementById("closeAdmin");
+
   const loginForm = document.getElementById("loginForm");
-  const logoutBtn = document.getElementById("logoutBtn");
+  const logoutButton = document.getElementById("logoutBtn");
+
   const searchInput = document.getElementById("searchInput");
-  const categoryFilter = document.getElementById("categoryFilter");
-  const closeProductDetails = document.getElementById("closeProductDetails");
-  const productDetailsOverlay =
+  const categoryFilter =
+    document.getElementById("categoryFilter");
+
+  const closeDetailsButton =
+    document.getElementById("closeProductDetails");
+
+  const detailsOverlay =
     document.getElementById("productDetailsOverlay");
-  const detailsAddCart = document.getElementById("detailsAddCart");
-  const productForm = document.getElementById("productForm");
-  const cancelEditBtn = document.getElementById("cancelEditBtn");
 
-  if (languageBtn) {
-    languageBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+  const detailsAddButton =
+    document.getElementById("detailsAddCart");
 
-      currentLanguage = currentLanguage === "en" ? "ku" : "en";
+  const productForm =
+    document.getElementById("productForm");
 
-      localStorage.setItem("ahstore_language", currentLanguage);
+  const cancelEditButton =
+    document.getElementById("cancelEditBtn");
 
-      updateLanguage();
+  // Language
+  if (languageButton) {
+    languageButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      language = language === "en" ? "ku" : "en";
+
+      localStorage.setItem(
+        "ahstore_language",
+        language
+      );
+
+      setLanguage();
       renderProducts();
       updateCart();
     });
   }
 
-  if (cartBtn) {
-    cartBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+  // Cart
+  if (cartButton) {
+    cartButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
 
       openCart();
     });
   }
 
-  if (closeCart) {
-    closeCart.addEventListener("click", closeCartDrawer);
+  if (closeCartButton) {
+    closeCartButton.addEventListener(
+      "click",
+      closeCart
+    );
   }
 
   if (cartOverlay) {
-    cartOverlay.addEventListener("click", closeCartDrawer);
+    cartOverlay.addEventListener(
+      "click",
+      closeCart
+    );
   }
 
-  if (whatsappOrder) {
-    whatsappOrder.addEventListener("click", sendWhatsAppOrder);
+  // WhatsApp
+  if (whatsappButton) {
+    whatsappButton.addEventListener(
+      "click",
+      sendOrder
+    );
   }
 
-  if (adminBtn) {
-    adminBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+  // Admin
+  if (adminButton) {
+    adminButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
 
       openAdmin();
     });
   }
 
-  if (closeAdmin) {
-    closeAdmin.addEventListener("click", closeAdminModal);
+  if (closeAdminButton) {
+    closeAdminButton.addEventListener(
+      "click",
+      closeAdmin
+    );
   }
 
   if (loginForm) {
-    loginForm.addEventListener("submit", loginAdmin);
+    loginForm.addEventListener(
+      "submit",
+      login
+    );
   }
 
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", logoutAdmin);
+  if (logoutButton) {
+    logoutButton.addEventListener(
+      "click",
+      logout
+    );
   }
 
+  // Search
   if (searchInput) {
-    searchInput.addEventListener("input", renderProducts);
+    searchInput.addEventListener(
+      "input",
+      renderProducts
+    );
   }
 
+  // Category
   if (categoryFilter) {
-    categoryFilter.addEventListener("change", renderProducts);
+    categoryFilter.addEventListener(
+      "change",
+      renderProducts
+    );
   }
 
-  if (closeProductDetails) {
-    closeProductDetails.addEventListener("click", closeProductModal);
+  // Product details
+  if (closeDetailsButton) {
+    closeDetailsButton.addEventListener(
+      "click",
+      closeProductModal
+    );
   }
 
-  if (productDetailsOverlay) {
-    productDetailsOverlay.addEventListener("click", (e) => {
-      if (e.target === productDetailsOverlay) {
+  if (detailsOverlay) {
+    detailsOverlay.addEventListener(
+      "click",
+      function (event) {
+        if (event.target === detailsOverlay) {
+          closeProductModal();
+        }
+      }
+    );
+  }
+
+  if (detailsAddButton) {
+    detailsAddButton.addEventListener(
+      "click",
+      function () {
+        if (!selectedProduct) return;
+
+        addToCart(selectedProduct.id);
         closeProductModal();
       }
-    });
+    );
   }
 
-  if (detailsAddCart) {
-    detailsAddCart.addEventListener("click", () => {
-      if (currentProduct) {
-        addToCart(currentProduct.id);
-        closeProductModal();
-      }
-    });
-  }
-
+  // Product manager
   if (productForm) {
-    productForm.addEventListener("submit", saveProduct);
+    productForm.addEventListener(
+      "submit",
+      saveProduct
+    );
   }
 
-  if (cancelEditBtn) {
-    cancelEditBtn.addEventListener("click", cancelEdit);
+  if (cancelEditButton) {
+    cancelEditButton.addEventListener(
+      "click",
+      cancelEdit
+    );
   }
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      closeCartDrawer();
-      closeProductModal();
-      closeAdminModal();
+  // Image/category changes
+  document.addEventListener(
+    "change",
+    handleChange
+  );
+
+  // Escape key
+  document.addEventListener(
+    "keydown",
+    function (event) {
+      if (event.key === "Escape") {
+        closeCart();
+        closeProductModal();
+        closeAdmin();
+      }
     }
-  });
-
-  document.addEventListener("change", handleDocumentChange);
+  );
 }
 
-function updateLanguage() {
-  document.documentElement.dir =
-    currentLanguage === "ku" ? "rtl" : "ltr";
+// =====================================================
+// LANGUAGE
+// =====================================================
 
+function setLanguage() {
   document.documentElement.lang =
-    currentLanguage === "ku" ? "ku" : "en";
+    language === "ku" ? "ku" : "en";
 
-  document.querySelectorAll("[data-en]").forEach((element) => {
-    const value =
-      currentLanguage === "ku"
-        ? element.dataset.ku
-        : element.dataset.en;
+  document.documentElement.dir =
+    language === "ku" ? "rtl" : "ltr";
 
-    if (value !== undefined) {
-      element.textContent = value;
+  document.querySelectorAll("[data-en]").forEach(
+    function (element) {
+      const text =
+        language === "ku"
+          ? element.getAttribute("data-ku")
+          : element.getAttribute("data-en");
+
+      if (text !== null) {
+        element.textContent = text;
+      }
     }
-  });
+  );
 
-  document.querySelectorAll("[data-placeholder-en]").forEach((element) => {
-    element.placeholder =
-      currentLanguage === "ku"
-        ? element.dataset.placeholderKu
-        : element.dataset.placeholderEn;
-  });
+  document
+    .querySelectorAll("[data-placeholder-en]")
+    .forEach(function (element) {
+      const placeholder =
+        language === "ku"
+          ? element.getAttribute(
+              "data-placeholder-ku"
+            )
+          : element.getAttribute(
+              "data-placeholder-en"
+            );
 
-  const languageBtn = document.getElementById("languageBtn");
+      if (placeholder !== null) {
+        element.placeholder = placeholder;
+      }
+    });
 
-  if (languageBtn) {
-    languageBtn.textContent =
-      currentLanguage === "en" ? "کوردی" : "English";
+  const languageButton =
+    document.getElementById("languageBtn");
+
+  if (languageButton) {
+    languageButton.textContent =
+      language === "en"
+        ? "کوردی"
+        : "English";
   }
 }
+
+// =====================================================
+// PRODUCTS
+// =====================================================
 
 async function loadProducts() {
-  const grid = document.getElementById("productsGrid");
+  const grid =
+    document.getElementById("productsGrid");
 
   if (grid) {
     grid.innerHTML =
       '<div class="loading">Loading products...</div>';
   }
 
-  const { data, error } = await supabaseClient
+  const result = await db
     .from("products")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false
+    });
 
-  if (error) {
-    console.error("Products error:", error);
+  if (result.error) {
+    console.error(
+      "SUPABASE PRODUCTS ERROR:",
+      result.error
+    );
 
     if (grid) {
       grid.innerHTML =
@@ -205,249 +345,430 @@ async function loadProducts() {
     return;
   }
 
-  products = data || [];
+  products = result.data || [];
 
-  console.log("Products loaded:", products);
+  console.log(
+    "Products loaded:",
+    products
+  );
 
   renderProducts();
   renderAdminProducts();
 }
 
 function renderProducts() {
-  const grid = document.getElementById("productsGrid");
+  const grid =
+    document.getElementById("productsGrid");
 
-  if (!grid) {
-    return;
-  }
+  if (!grid) return;
 
-  const searchInput = document.getElementById("searchInput");
-  const categoryFilter = document.getElementById("categoryFilter");
+  const searchInput =
+    document.getElementById("searchInput");
 
-  const search = searchInput
-    ? searchInput.value.trim().toLowerCase()
-    : "";
+  const categoryFilter =
+    document.getElementById("categoryFilter");
 
-  const category = categoryFilter
-    ? categoryFilter.value
-    : "all";
+  const search =
+    searchInput
+      ? searchInput.value
+          .trim()
+          .toLowerCase()
+      : "";
 
-  const filtered = products.filter((product) => {
-    const name = String(product.name || "").toLowerCase();
-    const brand = String(product.brand || "").toLowerCase();
+  const category =
+    categoryFilter
+      ? categoryFilter.value
+      : "all";
 
-    const matchesSearch =
-      !search ||
-      name.includes(search) ||
-      brand.includes(search);
+  const filteredProducts =
+    products.filter(function (product) {
+      const name =
+        String(product.name || "")
+          .toLowerCase();
 
-    const matchesCategory =
-      category === "all" ||
-      String(product.category || "").toLowerCase() ===
-        category.toLowerCase();
+      const brand =
+        String(product.brand || "")
+          .toLowerCase();
 
-    return matchesSearch && matchesCategory;
-  });
+      const productCategory =
+        String(product.category || "")
+          .toLowerCase();
 
-  if (!filtered.length) {
+      const matchesSearch =
+        !search ||
+        name.includes(search) ||
+        brand.includes(search);
+
+      const matchesCategory =
+        category === "all" ||
+        productCategory ===
+          category.toLowerCase();
+
+      return (
+        matchesSearch &&
+        matchesCategory
+      );
+    });
+
+  grid.innerHTML = "";
+
+  if (!filteredProducts.length) {
     grid.innerHTML =
       '<div class="loading">No products found.</div>';
 
     return;
   }
 
-  grid.innerHTML = "";
+  filteredProducts.forEach(
+    function (product) {
+      const card =
+        document.createElement("div");
 
-  filtered.forEach((product) => {
-    const card = document.createElement("div");
-    card.className = "product-card";
+      card.className =
+        "product-card";
 
-    const imageArea = document.createElement("div");
-    imageArea.className = "product-image";
+      // -------------------------
+      // IMAGE
+      // -------------------------
 
-    if (product.image_url) {
-      const img = document.createElement("img");
+      const imageArea =
+        document.createElement("div");
 
-      img.src = product.image_url;
-      img.alt = product.name || "Product";
-      img.loading = "lazy";
+      imageArea.className =
+        "product-image";
 
-      imageArea.appendChild(img);
-    } else {
-      const noImage = document.createElement("div");
+      if (product.image_url) {
+        const image =
+          document.createElement("img");
 
-      noImage.className = "no-image";
-      noImage.textContent = "NO IMAGE";
+        image.src =
+          product.image_url;
 
-      imageArea.appendChild(noImage);
+        image.alt =
+          product.name || "Product";
+
+        image.loading = "lazy";
+
+        imageArea.appendChild(image);
+      } else {
+        const noImage =
+          document.createElement("div");
+
+        noImage.className =
+          "no-image";
+
+        noImage.textContent =
+          "NO IMAGE";
+
+        imageArea.appendChild(
+          noImage
+        );
+      }
+
+      // -------------------------
+      // CONTENT
+      // -------------------------
+
+      const content =
+        document.createElement("div");
+
+      content.className =
+        "product-content";
+
+      const brand =
+        document.createElement("div");
+
+      brand.className =
+        "product-brand";
+
+      brand.textContent =
+        product.brand || "AH STORE";
+
+      const name =
+        document.createElement("h3");
+
+      name.textContent =
+        product.name || "Product";
+
+      // -------------------------
+      // DETAILS
+      // -------------------------
+
+      const details =
+        document.createElement("div");
+
+      details.className =
+        "product-details";
+
+      if (product.connection) {
+        const connection =
+          document.createElement("span");
+
+        connection.textContent =
+          product.connection;
+
+        details.appendChild(
+          connection
+        );
+      }
+
+      if (
+        String(product.category || "")
+          .toLowerCase() ===
+          "keyboard" &&
+        product.switch_type
+      ) {
+        const switchType =
+          document.createElement("span");
+
+        switchType.textContent =
+          product.switch_type +
+          " Switch";
+
+        details.appendChild(
+          switchType
+        );
+      }
+
+      // -------------------------
+      // PRICE
+      // -------------------------
+
+      const price =
+        document.createElement("div");
+
+      price.className =
+        "product-price";
+
+      const usd =
+        document.createElement("div");
+
+      usd.className =
+        "price-usd";
+
+      usd.textContent =
+        "$" +
+        Number(
+          product.price_usd || 0
+        ).toFixed(2);
+
+      const iqd =
+        document.createElement("div");
+
+      iqd.className =
+        "price-iqd";
+
+      iqd.textContent =
+        Number(
+          product.price_iqd || 0
+        ).toLocaleString() +
+        " IQD";
+
+      price.appendChild(usd);
+      price.appendChild(iqd);
+
+      // -------------------------
+      // BUTTONS
+      // -------------------------
+
+      const buttons =
+        document.createElement("div");
+
+      buttons.className =
+        "product-buttons";
+
+      const addButton =
+        document.createElement("button");
+
+      addButton.type = "button";
+      addButton.className =
+        "add-cart";
+
+      addButton.textContent =
+        language === "ku"
+          ? "زیادکردن بۆ سەبەت"
+          : "ADD TO CART";
+
+      addButton.addEventListener(
+        "click",
+        function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          addToCart(product.id);
+        }
+      );
+
+      const detailsButton =
+        document.createElement("button");
+
+      detailsButton.type = "button";
+      detailsButton.className =
+        "details-btn";
+
+      detailsButton.textContent =
+        language === "ku"
+          ? "وردەکاری"
+          : "DETAILS";
+
+      detailsButton.addEventListener(
+        "click",
+        function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          openProductModal(
+            product.id
+          );
+        }
+      );
+
+      buttons.appendChild(
+        addButton
+      );
+
+      buttons.appendChild(
+        detailsButton
+      );
+
+      // -------------------------
+      // BUILD CARD
+      // -------------------------
+
+      content.appendChild(brand);
+      content.appendChild(name);
+      content.appendChild(details);
+      content.appendChild(price);
+      content.appendChild(buttons);
+
+      card.appendChild(imageArea);
+      card.appendChild(content);
+
+      card.addEventListener(
+        "click",
+        function () {
+          openProductModal(
+            product.id
+          );
+        }
+      );
+
+      grid.appendChild(card);
     }
-
-    const content = document.createElement("div");
-    content.className = "product-content";
-
-    const brand = document.createElement("div");
-    brand.className = "product-brand";
-    brand.textContent = product.brand || "AH STORE";
-
-    const name = document.createElement("h3");
-    name.textContent = product.name || "Product";
-
-    const details = document.createElement("div");
-    details.className = "product-details";
-
-    if (product.connection) {
-      const connection = document.createElement("span");
-
-      connection.textContent = product.connection;
-
-      details.appendChild(connection);
-    }
-
-    if (
-      String(product.category || "").toLowerCase() === "keyboard" &&
-      product.switch_type
-    ) {
-      const switchType = document.createElement("span");
-
-      switchType.textContent =
-        product.switch_type + " Switch";
-
-      details.appendChild(switchType);
-    }
-
-    const price = document.createElement("div");
-    price.className = "product-price";
-
-    const usd = document.createElement("div");
-    usd.className = "price-usd";
-
-    usd.textContent =
-      "$" + Number(product.price_usd || 0).toFixed(2);
-
-    const iqd = document.createElement("div");
-    iqd.className = "price-iqd";
-
-    iqd.textContent =
-      Number(product.price_iqd || 0).toLocaleString() +
-      " IQD";
-
-    price.appendChild(usd);
-    price.appendChild(iqd);
-
-    const buttons = document.createElement("div");
-    buttons.className = "product-buttons";
-
-    const addButton = document.createElement("button");
-
-    addButton.className = "add-cart";
-    addButton.type = "button";
-
-    addButton.textContent =
-      currentLanguage === "ku"
-        ? "زیادکردن بۆ سەبەت"
-        : "ADD TO CART";
-
-    addButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      addToCart(product.id);
-    });
-
-    const detailsButton = document.createElement("button");
-
-    detailsButton.className = "details-btn";
-    detailsButton.type = "button";
-
-    detailsButton.textContent =
-      currentLanguage === "ku"
-        ? "وردەکاری"
-        : "DETAILS";
-
-    detailsButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      openProductDetails(product.id);
-    });
-
-    buttons.appendChild(addButton);
-    buttons.appendChild(detailsButton);
-
-    content.appendChild(brand);
-    content.appendChild(name);
-    content.appendChild(details);
-    content.appendChild(price);
-    content.appendChild(buttons);
-
-    card.appendChild(imageArea);
-    card.appendChild(content);
-
-    card.addEventListener("click", () => {
-      openProductDetails(product.id);
-    });
-
-    grid.appendChild(card);
-  });
+  );
 }
 
-function openCart() {
-  const drawer = document.getElementById("cartDrawer");
-  const overlay = document.getElementById("cartOverlay");
+// =====================================================
+// CART
+// =====================================================
 
-  if (!drawer) {
-    return;
+function openCart() {
+  const drawer =
+    document.getElementById(
+      "cartDrawer"
+    );
+
+  const overlay =
+    document.getElementById(
+      "cartOverlay"
+    );
+
+  if (drawer) {
+    drawer.classList.remove(
+      "hidden"
+    );
+
+    drawer.classList.add(
+      "open"
+    );
   }
 
-  drawer.classList.remove("hidden");
-  drawer.classList.add("open");
-
   if (overlay) {
-    overlay.classList.remove("hidden");
-    overlay.classList.add("open");
+    overlay.classList.remove(
+      "hidden"
+    );
+
+    overlay.classList.add(
+      "open"
+    );
   }
 
   updateCart();
 }
 
-function closeCartDrawer() {
-  const drawer = document.getElementById("cartDrawer");
-  const overlay = document.getElementById("cartOverlay");
+function closeCart() {
+  const drawer =
+    document.getElementById(
+      "cartDrawer"
+    );
+
+  const overlay =
+    document.getElementById(
+      "cartOverlay"
+    );
 
   if (drawer) {
-    drawer.classList.remove("open");
-    drawer.classList.add("hidden");
+    drawer.classList.remove(
+      "open"
+    );
+
+    drawer.classList.add(
+      "hidden"
+    );
   }
 
   if (overlay) {
-    overlay.classList.remove("open");
-    overlay.classList.add("hidden");
+    overlay.classList.remove(
+      "open"
+    );
+
+    overlay.classList.add(
+      "hidden"
+    );
   }
 }
 
 function addToCart(id) {
-  const product = products.find(
-    (p) => String(p.id) === String(id)
-  );
+  const product =
+    products.find(function (item) {
+      return String(item.id) ===
+        String(id);
+    });
 
   if (!product) {
-    console.error("Product not found:", id);
+    console.error(
+      "Could not find product:",
+      id
+    );
+
     return;
   }
 
-  const existing = cart.find(
-    (item) => String(item.id) === String(product.id)
-  );
+  const existing =
+    cart.find(function (item) {
+      return String(item.id) ===
+        String(product.id);
+    });
 
   if (existing) {
-    existing.quantity += 1;
+    existing.quantity =
+      Number(existing.quantity || 0) +
+      1;
   } else {
     cart.push({
       id: product.id,
       name: product.name,
       brand: product.brand,
-      price_usd: Number(product.price_usd || 0),
-      price_iqd: Number(product.price_iqd || 0),
-      image_url: product.image_url,
+      price_usd:
+        Number(
+          product.price_usd || 0
+        ),
+      price_iqd:
+        Number(
+          product.price_iqd || 0
+        ),
+      image_url:
+        product.image_url || "",
       quantity: 1
     });
   }
@@ -457,24 +778,31 @@ function addToCart(id) {
 }
 
 function removeFromCart(id) {
-  cart = cart.filter(
-    (item) => String(item.id) !== String(id)
-  );
+  cart =
+    cart.filter(function (item) {
+      return String(item.id) !==
+        String(id);
+    });
 
   saveCart();
   updateCart();
 }
 
-function changeQuantity(id, amount) {
-  const item = cart.find(
-    (product) => String(product.id) === String(id)
-  );
+function changeQuantity(
+  id,
+  amount
+) {
+  const item =
+    cart.find(function (cartItem) {
+      return String(cartItem.id) ===
+        String(id);
+    });
 
-  if (!item) {
-    return;
-  }
+  if (!item) return;
 
-  item.quantity += amount;
+  item.quantity =
+    Number(item.quantity || 0) +
+    amount;
 
   if (item.quantity <= 0) {
     removeFromCart(id);
@@ -493,132 +821,259 @@ function saveCart() {
 }
 
 function updateCart() {
-  const cartItems = document.getElementById("cartItems");
-  const cartCount = document.getElementById("cartCount");
-  const cartTotal = document.getElementById("cartTotal");
-
-  if (cartCount) {
-    cartCount.textContent = cart.reduce(
-      (total, item) =>
-        total + Number(item.quantity || 0),
-      0
+  const items =
+    document.getElementById(
+      "cartItems"
     );
+
+  const count =
+    document.getElementById(
+      "cartCount"
+    );
+
+  const total =
+    document.getElementById(
+      "cartTotal"
+    );
+
+  const itemCount =
+    cart.reduce(function (
+      sum,
+      item
+    ) {
+      return (
+        sum +
+        Number(
+          item.quantity || 0
+        )
+      );
+    }, 0);
+
+  if (count) {
+    count.textContent =
+      itemCount;
   }
 
-  if (!cartItems || !cartTotal) {
+  if (!items || !total) {
     return;
   }
+
+  items.innerHTML = "";
 
   if (!cart.length) {
-    cartItems.innerHTML =
+    items.innerHTML =
       '<div class="empty-cart">Your cart is empty.</div>';
 
-    cartTotal.textContent = "$0";
+    total.textContent =
+      "$0";
 
     return;
   }
-
-  cartItems.innerHTML = "";
 
   let totalUSD = 0;
 
-  cart.forEach((item) => {
-    const quantity = Number(item.quantity || 0);
-    const priceUSD = Number(item.price_usd || 0);
+  cart.forEach(function (item) {
+    const quantity =
+      Number(
+        item.quantity || 0
+      );
 
-    totalUSD += priceUSD * quantity;
+    const price =
+      Number(
+        item.price_usd || 0
+      );
 
-    const row = document.createElement("div");
-    row.className = "cart-item";
+    totalUSD +=
+      price * quantity;
 
-    const image = document.createElement("div");
-    image.className = "cart-item-image";
+    const row =
+      document.createElement(
+        "div"
+      );
+
+    row.className =
+      "cart-item";
+
+    // Image
+    const imageBox =
+      document.createElement(
+        "div"
+      );
+
+    imageBox.className =
+      "cart-item-image";
 
     if (item.image_url) {
-      const img = document.createElement("img");
+      const image =
+        document.createElement(
+          "img"
+        );
 
-      img.src = item.image_url;
-      img.alt = item.name || "Product";
+      image.src =
+        item.image_url;
 
-      image.appendChild(img);
+      image.alt =
+        item.name || "Product";
+
+      imageBox.appendChild(
+        image
+      );
     }
 
-    const info = document.createElement("div");
-    info.className = "cart-item-info";
+    // Info
+    const info =
+      document.createElement(
+        "div"
+      );
 
-    const name = document.createElement("strong");
-    name.textContent = item.name || "Product";
+    info.className =
+      "cart-item-info";
 
-    const price = document.createElement("span");
-    price.textContent =
-      "$" + priceUSD.toFixed(2);
+    const name =
+      document.createElement(
+        "strong"
+      );
 
-    const quantityBox = document.createElement("div");
-    quantityBox.className = "cart-quantity";
+    name.textContent =
+      item.name || "Product";
 
-    const minus = document.createElement("button");
+    const itemPrice =
+      document.createElement(
+        "span"
+      );
+
+    itemPrice.textContent =
+      "$" +
+      price.toFixed(2);
+
+    // Quantity
+    const quantityBox =
+      document.createElement(
+        "div"
+      );
+
+    quantityBox.className =
+      "cart-quantity";
+
+    const minus =
+      document.createElement(
+        "button"
+      );
 
     minus.type = "button";
     minus.textContent = "−";
 
-    minus.addEventListener("click", (e) => {
-      e.stopPropagation();
+    minus.addEventListener(
+      "click",
+      function (event) {
+        event.stopPropagation();
 
-      changeQuantity(item.id, -1);
-    });
+        changeQuantity(
+          item.id,
+          -1
+        );
+      }
+    );
 
-    const number = document.createElement("span");
-    number.textContent = quantity;
+    const number =
+      document.createElement(
+        "span"
+      );
 
-    const plus = document.createElement("button");
+    number.textContent =
+      quantity;
+
+    const plus =
+      document.createElement(
+        "button"
+      );
 
     plus.type = "button";
     plus.textContent = "+";
 
-    plus.addEventListener("click", (e) => {
-      e.stopPropagation();
+    plus.addEventListener(
+      "click",
+      function (event) {
+        event.stopPropagation();
 
-      changeQuantity(item.id, 1);
-    });
+        changeQuantity(
+          item.id,
+          1
+        );
+      }
+    );
 
-    quantityBox.appendChild(minus);
-    quantityBox.appendChild(number);
-    quantityBox.appendChild(plus);
+    quantityBox.appendChild(
+      minus
+    );
 
-    const remove = document.createElement("button");
+    quantityBox.appendChild(
+      number
+    );
 
-    remove.className = "cart-remove";
+    quantityBox.appendChild(
+      plus
+    );
+
+    // Remove
+    const remove =
+      document.createElement(
+        "button"
+      );
+
     remove.type = "button";
+    remove.className =
+      "cart-remove";
+
     remove.textContent =
-      currentLanguage === "ku"
+      language === "ku"
         ? "سڕینەوە"
         : "Remove";
 
-    remove.addEventListener("click", (e) => {
-      e.stopPropagation();
+    remove.addEventListener(
+      "click",
+      function (event) {
+        event.stopPropagation();
 
-      removeFromCart(item.id);
-    });
+        removeFromCart(
+          item.id
+        );
+      }
+    );
 
     info.appendChild(name);
-    info.appendChild(price);
-    info.appendChild(quantityBox);
+    info.appendChild(itemPrice);
+    info.appendChild(
+      quantityBox
+    );
     info.appendChild(remove);
 
-    row.appendChild(image);
-    row.appendChild(info);
+    row.appendChild(
+      imageBox
+    );
 
-    cartItems.appendChild(row);
+    row.appendChild(
+      info
+    );
+
+    items.appendChild(
+      row
+    );
   });
 
-  cartTotal.textContent =
-    "$" + totalUSD.toFixed(2);
+  total.textContent =
+    "$" +
+    totalUSD.toFixed(2);
 }
 
-function sendWhatsAppOrder() {
+// =====================================================
+// WHATSAPP
+// =====================================================
+
+function sendOrder() {
   if (!cart.length) {
     alert(
-      currentLanguage === "ku"
+      language === "ku"
         ? "سەبەتەکەت بەتاڵە."
         : "Your cart is empty."
     );
@@ -627,16 +1082,25 @@ function sendWhatsAppOrder() {
   }
 
   let message =
-    currentLanguage === "ku"
+    language === "ku"
       ? "سڵاو، دەمەوێت ئەم بەرهەمانە داوا بکەم:\n\n"
       : "Hello, I would like to order:\n\n";
 
   let total = 0;
 
-  cart.forEach((item) => {
+  cart.forEach(function (item) {
+    const price =
+      Number(
+        item.price_usd || 0
+      );
+
+    const quantity =
+      Number(
+        item.quantity || 0
+      );
+
     const itemTotal =
-      Number(item.price_usd || 0) *
-      Number(item.quantity || 0);
+      price * quantity;
 
     total += itemTotal;
 
@@ -644,7 +1108,7 @@ function sendWhatsAppOrder() {
       "• " +
       item.name +
       " x" +
-      item.quantity +
+      quantity +
       " - $" +
       itemTotal.toFixed(2) +
       "\n";
@@ -652,178 +1116,261 @@ function sendWhatsAppOrder() {
 
   message +=
     "\n" +
-    (currentLanguage === "ku"
-      ? "کۆی گشتی: $"
-      : "Total: $") +
+    (
+      language === "ku"
+        ? "کۆی گشتی: $"
+        : "Total: $"
+    ) +
     total.toFixed(2);
 
-  const whatsappURL =
+  const url =
     "https://wa.me/" +
     WHATSAPP_NUMBER +
     "?text=" +
-    encodeURIComponent(message);
+    encodeURIComponent(
+      message
+    );
 
-  window.open(whatsappURL, "_blank");
+  window.open(
+    url,
+    "_blank"
+  );
 }
 
-function openProductDetails(id) {
-  const product = products.find(
-    (p) => String(p.id) === String(id)
-  );
+// =====================================================
+// PRODUCT DETAILS
+// =====================================================
 
-  if (!product) {
-    return;
-  }
+function openProductModal(id) {
+  const product =
+    products.find(function (item) {
+      return String(item.id) ===
+        String(id);
+    });
 
-  currentProduct = product;
+  if (!product) return;
+
+  selectedProduct =
+    product;
 
   const overlay =
-    document.getElementById("productDetailsOverlay");
+    document.getElementById(
+      "productDetailsOverlay"
+    );
 
-  if (!overlay) {
-    return;
-  }
+  if (!overlay) return;
 
-  const detailsBrand =
-    document.getElementById("detailsBrand");
+  const brand =
+    document.getElementById(
+      "detailsBrand"
+    );
 
-  const detailsName =
-    document.getElementById("detailsName");
+  const name =
+    document.getElementById(
+      "detailsName"
+    );
 
-  const detailsCategory =
-    document.getElementById("detailsCategory");
+  const category =
+    document.getElementById(
+      "detailsCategory"
+    );
 
-  const detailsConnection =
-    document.getElementById("detailsConnection");
+  const connection =
+    document.getElementById(
+      "detailsConnection"
+    );
 
-  const detailsUSD =
-    document.getElementById("detailsUSD");
+  const usd =
+    document.getElementById(
+      "detailsUSD"
+    );
 
-  const detailsIQD =
-    document.getElementById("detailsIQD");
+  const iqd =
+    document.getElementById(
+      "detailsIQD"
+    );
 
   const switchRow =
-    document.getElementById("detailsSwitchRow");
+    document.getElementById(
+      "detailsSwitchRow"
+    );
 
-  const switchType =
-    document.getElementById("detailsSwitch");
+  const switchText =
+    document.getElementById(
+      "detailsSwitch"
+    );
 
   const image =
-    document.getElementById("detailsImage");
+    document.getElementById(
+      "detailsImage"
+    );
 
   const noImage =
-    document.getElementById("detailsNoImage");
+    document.getElementById(
+      "detailsNoImage"
+    );
 
-  if (detailsBrand) {
-    detailsBrand.textContent =
-      product.brand || "AH STORE";
+  if (brand) {
+    brand.textContent =
+      product.brand ||
+      "AH STORE";
   }
 
-  if (detailsName) {
-    detailsName.textContent =
-      product.name || "";
+  if (name) {
+    name.textContent =
+      product.name ||
+      "";
   }
 
-  if (detailsCategory) {
-    detailsCategory.textContent =
-      product.category || "";
+  if (category) {
+    category.textContent =
+      product.category ||
+      "";
   }
 
-  if (detailsConnection) {
-    detailsConnection.textContent =
-      product.connection || "";
+  if (connection) {
+    connection.textContent =
+      product.connection ||
+      "";
   }
 
-  if (detailsUSD) {
-    detailsUSD.textContent =
-      "$" + Number(product.price_usd || 0).toFixed(2);
+  if (usd) {
+    usd.textContent =
+      "$" +
+      Number(
+        product.price_usd || 0
+      ).toFixed(2);
   }
 
-  if (detailsIQD) {
-    detailsIQD.textContent =
-      Number(product.price_iqd || 0).toLocaleString() +
+  if (iqd) {
+    iqd.textContent =
+      Number(
+        product.price_iqd || 0
+      ).toLocaleString() +
       " IQD";
   }
 
   if (
-    String(product.category || "").toLowerCase() ===
+    String(
+      product.category || ""
+    ).toLowerCase() ===
       "keyboard" &&
     product.switch_type
   ) {
-    if (switchType) {
-      switchType.textContent =
-        product.switch_type + " Switch";
+    if (switchText) {
+      switchText.textContent =
+        product.switch_type +
+        " Switch";
     }
 
     if (switchRow) {
-      switchRow.classList.remove("hidden");
+      switchRow.classList.remove(
+        "hidden"
+      );
     }
   } else {
-    if (switchType) {
-      switchType.textContent = "";
+    if (switchText) {
+      switchText.textContent =
+        "";
     }
 
     if (switchRow) {
-      switchRow.classList.add("hidden");
+      switchRow.classList.add(
+        "hidden"
+      );
     }
   }
 
   if (product.image_url) {
     if (image) {
-      image.src = product.image_url;
-      image.classList.remove("hidden");
+      image.src =
+        product.image_url;
+
+      image.classList.remove(
+        "hidden"
+      );
     }
 
     if (noImage) {
-      noImage.classList.add("hidden");
+      noImage.classList.add(
+        "hidden"
+      );
     }
   } else {
     if (image) {
-      image.removeAttribute("src");
-      image.classList.add("hidden");
+      image.removeAttribute(
+        "src"
+      );
+
+      image.classList.add(
+        "hidden"
+      );
     }
 
     if (noImage) {
-      noImage.classList.remove("hidden");
+      noImage.classList.remove(
+        "hidden"
+      );
     }
   }
 
-  overlay.classList.remove("hidden");
+  overlay.classList.remove(
+    "hidden"
+  );
 }
 
 function closeProductModal() {
   const overlay =
-    document.getElementById("productDetailsOverlay");
+    document.getElementById(
+      "productDetailsOverlay"
+    );
 
   if (overlay) {
-    overlay.classList.add("hidden");
+    overlay.classList.add(
+      "hidden"
+    );
   }
 
-  currentProduct = null;
+  selectedProduct =
+    null;
 }
+
+// =====================================================
+// ADMIN
+// =====================================================
 
 function openAdmin() {
   const modal =
-    document.getElementById("adminModal");
+    document.getElementById(
+      "adminModal"
+    );
 
   if (modal) {
-    modal.classList.remove("hidden");
+    modal.classList.remove(
+      "hidden"
+    );
   }
 }
 
-function closeAdminModal() {
+function closeAdmin() {
   const modal =
-    document.getElementById("adminModal");
+    document.getElementById(
+      "adminModal"
+    );
 
   if (modal) {
-    modal.classList.add("hidden");
+    modal.classList.add(
+      "hidden"
+    );
   }
 }
 
-async function checkAdminSession() {
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
+async function checkLogin() {
+  const result =
+    await db.auth.getSession();
+
+  const session =
+    result.data?.session;
 
   if (session) {
     showAdminPanel();
@@ -833,77 +1380,115 @@ async function checkAdminSession() {
 }
 
 function showLogin() {
-  const loginSection =
-    document.getElementById("loginSection");
+  const login =
+    document.getElementById(
+      "loginSection"
+    );
 
-  const adminPanel =
-    document.getElementById("adminPanel");
+  const panel =
+    document.getElementById(
+      "adminPanel"
+    );
 
-  if (loginSection) {
-    loginSection.classList.remove("hidden");
+  if (login) {
+    login.classList.remove(
+      "hidden"
+    );
   }
 
-  if (adminPanel) {
-    adminPanel.classList.add("hidden");
+  if (panel) {
+    panel.classList.add(
+      "hidden"
+    );
   }
 }
 
 function showAdminPanel() {
-  const loginSection =
-    document.getElementById("loginSection");
+  const login =
+    document.getElementById(
+      "loginSection"
+    );
 
-  const adminPanel =
-    document.getElementById("adminPanel");
+  const panel =
+    document.getElementById(
+      "adminPanel"
+    );
 
-  if (loginSection) {
-    loginSection.classList.add("hidden");
+  if (login) {
+    login.classList.add(
+      "hidden"
+    );
   }
 
-  if (adminPanel) {
-    adminPanel.classList.remove("hidden");
+  if (panel) {
+    panel.classList.remove(
+      "hidden"
+    );
   }
 
   renderAdminProducts();
 }
 
-async function loginAdmin(e) {
-  e.preventDefault();
+async function login(event) {
+  event.preventDefault();
 
-  const email =
-    document.getElementById("adminEmail")?.value.trim();
+  const emailInput =
+    document.getElementById(
+      "adminEmail"
+    );
 
-  const password =
-    document.getElementById("adminPassword")?.value;
+  const passwordInput =
+    document.getElementById(
+      "adminPassword"
+    );
 
   const message =
-    document.getElementById("loginMessage");
+    document.getElementById(
+      "loginMessage"
+    );
+
+  const email =
+    emailInput
+      ? emailInput.value.trim()
+      : "";
+
+  const password =
+    passwordInput
+      ? passwordInput.value
+      : "";
 
   if (!email || !password) {
     return;
   }
 
   if (message) {
-    message.textContent = "Signing in...";
+    message.textContent =
+      "Signing in...";
   }
 
-  const { error } =
-    await supabaseClient.auth.signInWithPassword({
-      email,
-      password
+  const result =
+    await db.auth.signInWithPassword({
+      email: email,
+      password: password
     });
 
-  if (error) {
-    console.error(error);
+  if (result.error) {
+    console.error(
+      "LOGIN ERROR:",
+      result.error
+    );
 
     if (message) {
-      message.textContent = error.message;
+      message.textContent =
+        result.error.message;
     }
 
     return;
   }
 
   if (message) {
-    message.textContent = "";
+    message.textContent =
+      "";
   }
 
   showAdminPanel();
@@ -911,185 +1496,231 @@ async function loginAdmin(e) {
   await loadProducts();
 }
 
-async function logoutAdmin() {
-  await supabaseClient.auth.signOut();
+async function logout() {
+  await db.auth.signOut();
 
   showLogin();
-
-  const email =
-    document.getElementById("adminEmail");
-
-  const password =
-    document.getElementById("adminPassword");
-
-  if (email) {
-    email.value = "";
-  }
-
-  if (password) {
-    password.value = "";
-  }
 }
+
+// =====================================================
+// ADMIN PRODUCT LIST
+// =====================================================
 
 function renderAdminProducts() {
   const list =
-    document.getElementById("adminProductsList");
+    document.getElementById(
+      "adminProductsList"
+    );
 
-  if (!list) {
-    return;
-  }
-
-  if (!products.length) {
-    list.innerHTML = "<p>No products yet.</p>";
-    return;
-  }
+  if (!list) return;
 
   list.innerHTML = "";
 
-  products.forEach((product) => {
-    const item = document.createElement("div");
+  if (!products.length) {
+    list.innerHTML =
+      "<p>No products yet.</p>";
 
-    item.className = "admin-product";
-
-    const info = document.createElement("div");
-
-    info.className = "admin-product-info";
-
-    const name = document.createElement("strong");
-
-    name.textContent =
-      product.name || "Product";
-
-    const details = document.createElement("span");
-
-    details.textContent =
-      (product.brand || "") +
-      " • " +
-      (product.category || "") +
-      " • $" +
-      Number(product.price_usd || 0).toFixed(2);
-
-    info.appendChild(name);
-    info.appendChild(details);
-
-    const actions = document.createElement("div");
-
-    actions.className =
-      "admin-product-actions";
-
-    const edit = document.createElement("button");
-
-    edit.type = "button";
-    edit.textContent = "EDIT";
-
-    edit.addEventListener("click", () => {
-      editProduct(product.id);
-    });
-
-    const remove = document.createElement("button");
-
-    remove.type = "button";
-    remove.textContent = "DELETE";
-
-    remove.addEventListener("click", () => {
-      deleteProduct(product.id);
-    });
-
-    actions.appendChild(edit);
-    actions.appendChild(remove);
-
-    item.appendChild(info);
-    item.appendChild(actions);
-
-    list.appendChild(item);
-  });
-}
-
-function editProduct(id) {
-  const product = products.find(
-    (p) => String(p.id) === String(id)
-  );
-
-  if (!product) {
     return;
   }
 
-  editingProductId = product.id;
+  products.forEach(
+    function (product) {
+      const item =
+        document.createElement(
+          "div"
+        );
 
-  const productId =
-    document.getElementById("productId");
+      item.className =
+        "admin-product";
 
-  const productName =
-    document.getElementById("productName");
+      const info =
+        document.createElement(
+          "div"
+        );
 
-  const productBrand =
-    document.getElementById("productBrand");
+      info.className =
+        "admin-product-info";
 
-  const productCategory =
-    document.getElementById("productCategory");
+      const name =
+        document.createElement(
+          "strong"
+        );
 
-  const productUSD =
-    document.getElementById("productUSD");
+      name.textContent =
+        product.name ||
+        "Product";
 
-  const productIQD =
-    document.getElementById("productIQD");
+      const details =
+        document.createElement(
+          "span"
+        );
 
-  const productConnection =
-    document.getElementById("productConnection");
+      details.textContent =
+        (product.brand || "") +
+        " • " +
+        (product.category || "") +
+        " • $" +
+        Number(
+          product.price_usd || 0
+        ).toFixed(2);
 
-  const productSwitch =
-    document.getElementById("productSwitch");
+      info.appendChild(name);
+      info.appendChild(details);
 
-  if (productId) {
-    productId.value = product.id;
-  }
+      const actions =
+        document.createElement(
+          "div"
+        );
 
-  if (productName) {
-    productName.value = product.name || "";
-  }
+      actions.className =
+        "admin-product-actions";
 
-  if (productBrand) {
-    productBrand.value = product.brand || "";
-  }
+      const edit =
+        document.createElement(
+          "button"
+        );
 
-  if (productCategory) {
-    productCategory.value =
-      product.category || "other";
-  }
+      edit.type = "button";
+      edit.textContent =
+        "EDIT";
 
-  if (productUSD) {
-    productUSD.value =
-      product.price_usd || "";
-  }
+      edit.addEventListener(
+        "click",
+        function () {
+          editProduct(
+            product.id
+          );
+        }
+      );
 
-  if (productIQD) {
-    productIQD.value =
-      product.price_iqd || "";
-  }
+      const remove =
+        document.createElement(
+          "button"
+        );
 
-  if (productConnection) {
-    productConnection.value =
-      product.connection || "Wired";
-  }
+      remove.type = "button";
+      remove.textContent =
+        "DELETE";
 
-  if (productSwitch) {
-    productSwitch.value =
-      product.switch_type || "";
-  }
+      remove.addEventListener(
+        "click",
+        function () {
+          deleteProduct(
+            product.id
+          );
+        }
+      );
+
+      actions.appendChild(
+        edit
+      );
+
+      actions.appendChild(
+        remove
+      );
+
+      item.appendChild(
+        info
+      );
+
+      item.appendChild(
+        actions
+      );
+
+      list.appendChild(
+        item
+      );
+    }
+  );
+}
+
+// =====================================================
+// EDIT PRODUCT
+// =====================================================
+
+function editProduct(id) {
+  const product =
+    products.find(function (item) {
+      return String(item.id) ===
+        String(id);
+    });
+
+  if (!product) return;
+
+  editingId =
+    product.id;
+
+  setValue(
+    "productId",
+    product.id
+  );
+
+  setValue(
+    "productName",
+    product.name || ""
+  );
+
+  setValue(
+    "productBrand",
+    product.brand || ""
+  );
+
+  setValue(
+    "productCategory",
+    product.category || "other"
+  );
+
+  setValue(
+    "productUSD",
+    product.price_usd || ""
+  );
+
+  setValue(
+    "productIQD",
+    product.price_iqd || ""
+  );
+
+  setValue(
+    "productConnection",
+    product.connection || "Wired"
+  );
+
+  setValue(
+    "productSwitch",
+    product.switch_type || ""
+  );
 
   const preview =
-    document.getElementById("imagePreview");
+    document.getElementById(
+      "imagePreview"
+    );
 
-  if (preview && product.image_url) {
-    preview.src = product.image_url;
-    preview.classList.remove("hidden");
+  if (preview) {
+    if (product.image_url) {
+      preview.src =
+        product.image_url;
+
+      preview.classList.remove(
+        "hidden"
+      );
+    } else {
+      preview.src = "";
+
+      preview.classList.add(
+        "hidden"
+      );
+    }
   }
 
   const saveButton =
-    document.getElementById("saveProductBtn");
+    document.getElementById(
+      "saveProductBtn"
+    );
 
   const cancelButton =
-    document.getElementById("cancelEditBtn");
+    document.getElementById(
+      "cancelEditBtn"
+    );
 
   if (saveButton) {
     saveButton.textContent =
@@ -1097,42 +1728,59 @@ function editProduct(id) {
   }
 
   if (cancelButton) {
-    cancelButton.classList.remove("hidden");
+    cancelButton.classList.remove(
+      "hidden"
+    );
   }
 
   updateSwitchField();
 }
 
 function cancelEdit() {
-  editingProductId = null;
+  editingId =
+    null;
 
   const form =
-    document.getElementById("productForm");
+    document.getElementById(
+      "productForm"
+    );
 
   if (form) {
     form.reset();
   }
 
   const productId =
-    document.getElementById("productId");
+    document.getElementById(
+      "productId"
+    );
 
   if (productId) {
-    productId.value = "";
+    productId.value =
+      "";
   }
 
   const preview =
-    document.getElementById("imagePreview");
+    document.getElementById(
+      "imagePreview"
+    );
 
   if (preview) {
     preview.src = "";
-    preview.classList.add("hidden");
+
+    preview.classList.add(
+      "hidden"
+    );
   }
 
   const saveButton =
-    document.getElementById("saveProductBtn");
+    document.getElementById(
+      "saveProductBtn"
+    );
 
   const cancelButton =
-    document.getElementById("cancelEditBtn");
+    document.getElementById(
+      "cancelEditBtn"
+    );
 
   if (saveButton) {
     saveButton.textContent =
@@ -1140,75 +1788,142 @@ function cancelEdit() {
   }
 
   if (cancelButton) {
-    cancelButton.classList.add("hidden");
+    cancelButton.classList.add(
+      "hidden"
+    );
   }
 
   updateSwitchField();
 }
 
-async function saveProduct(e) {
-  e.preventDefault();
+function setValue(
+  id,
+  value
+) {
+  const element =
+    document.getElementById(id);
+
+  if (element) {
+    element.value =
+      value;
+  }
+}
+
+// =====================================================
+// SAVE PRODUCT
+// =====================================================
+
+async function saveProduct(event) {
+  event.preventDefault();
 
   const message =
-    document.getElementById("productMessage");
+    document.getElementById(
+      "productMessage"
+    );
 
   const saveButton =
-    document.getElementById("saveProductBtn");
+    document.getElementById(
+      "saveProductBtn"
+    );
 
   const name =
-    document.getElementById("productName").value.trim();
+    document.getElementById(
+      "productName"
+    )?.value.trim() || "";
 
   const brand =
-    document.getElementById("productBrand").value.trim();
+    document.getElementById(
+      "productBrand"
+    )?.value.trim() || "";
 
   const category =
-    document.getElementById("productCategory").value;
+    document.getElementById(
+      "productCategory"
+    )?.value || "other";
 
   const priceUSD =
-    Number(document.getElementById("productUSD").value);
+    Number(
+      document.getElementById(
+        "productUSD"
+      )?.value || 0
+    );
 
   const priceIQD =
-    Number(document.getElementById("productIQD").value);
+    Number(
+      document.getElementById(
+        "productIQD"
+      )?.value || 0
+    );
 
   const connection =
-    document.getElementById("productConnection").value;
+    document.getElementById(
+      "productConnection"
+    )?.value || "Wired";
 
   const switchType =
-    document.getElementById("productSwitch").value.trim();
+    document.getElementById(
+      "productSwitch"
+    )?.value.trim() || "";
 
   const imageInput =
-    document.getElementById("productImage");
+    document.getElementById(
+      "productImage"
+    );
+
+  if (!name) {
+    if (message) {
+      message.textContent =
+        "Product name is required.";
+    }
+
+    return;
+  }
 
   if (message) {
-    message.textContent = "Saving...";
+    message.textContent =
+      "Saving...";
   }
 
   if (saveButton) {
-    saveButton.disabled = true;
+    saveButton.disabled =
+      true;
   }
 
-  let imageUrl = null;
+  let imageUrl =
+    null;
 
-  const existingProduct = editingProductId
-    ? products.find(
-        (p) =>
-          String(p.id) ===
-          String(editingProductId)
-      )
-    : null;
+  // Existing image
+  if (editingId) {
+    const oldProduct =
+      products.find(function (item) {
+        return String(item.id) ===
+          String(editingId);
+      });
 
-  if (existingProduct) {
-    imageUrl =
-      existingProduct.image_url || null;
+    if (oldProduct) {
+      imageUrl =
+        oldProduct.image_url ||
+        null;
+    }
   }
 
-  if (imageInput?.files?.length) {
-    const file = imageInput.files[0];
+  // New image
+  if (
+    imageInput &&
+    imageInput.files &&
+    imageInput.files.length
+  ) {
+    const file =
+      imageInput.files[0];
 
     const extension =
-      file.name.split(".").pop();
+      file.name.includes(".")
+        ? file.name
+            .split(".")
+            .pop()
+        : "jpg";
 
-    const filePath =
+    const path =
       Date.now() +
       "-" +
       Math.random()
@@ -1217,81 +1932,90 @@ async function saveProduct(e) {
       "." +
       extension;
 
-    const { error: uploadError } =
-      await supabaseClient.storage
+    const upload =
+      await db.storage
         .from("products")
-        .upload(filePath, file, {
-          upsert: false
-        });
+        .upload(
+          path,
+          file,
+          {
+            upsert: false
+          }
+        );
 
-    if (uploadError) {
-      console.error(uploadError);
+    if (upload.error) {
+      console.error(
+        "IMAGE UPLOAD ERROR:",
+        upload.error
+      );
 
       if (message) {
         message.textContent =
           "Image upload failed: " +
-          uploadError.message;
+          upload.error.message;
       }
 
       if (saveButton) {
-        saveButton.disabled = false;
+        saveButton.disabled =
+          false;
       }
 
       return;
     }
 
-    const { data: publicUrlData } =
-      supabaseClient.storage
+    const publicURL =
+      db.storage
         .from("products")
-        .getPublicUrl(filePath);
+        .getPublicUrl(path);
 
     imageUrl =
-      publicUrlData.publicUrl;
+      publicURL.data.publicUrl;
   }
 
-  const productData = {
-    name,
-    brand,
-    category,
+  const data = {
+    name: name,
+    brand: brand,
+    category: category,
     price_usd: priceUSD,
     price_iqd: priceIQD,
     image_url: imageUrl,
-    connection,
+    connection: connection,
     switch_type:
       category === "keyboard"
         ? switchType
         : null
   };
 
-  let error = null;
+  let result;
 
-  if (editingProductId) {
-    const result =
-      await supabaseClient
+  if (editingId) {
+    result =
+      await db
         .from("products")
-        .update(productData)
-        .eq("id", editingProductId);
-
-    error = result.error;
+        .update(data)
+        .eq("id", editingId);
   } else {
-    const result =
-      await supabaseClient
+    result =
+      await db
         .from("products")
-        .insert(productData);
-
-    error = result.error;
+        .insert(data);
   }
 
-  if (error) {
-    console.error(error);
+  if (result.error) {
+    console.error(
+      "PRODUCT SAVE ERROR:",
+      result.error
+    );
 
     if (message) {
       message.textContent =
-        "Error: " + error.message;
+        "Error: " +
+        result.error.message;
     }
 
     if (saveButton) {
-      saveButton.disabled = false;
+      saveButton.disabled =
+        false;
     }
 
     return;
@@ -1299,94 +2023,136 @@ async function saveProduct(e) {
 
   if (message) {
     message.textContent =
-      editingProductId
+      editingId
         ? "Product updated!"
         : "Product added!";
   }
 
+  editingId =
+    null;
+
   cancelEdit();
 
   if (saveButton) {
-    saveButton.disabled = false;
+    saveButton.disabled =
+      false;
   }
 
   await loadProducts();
 }
 
+// =====================================================
+// DELETE PRODUCT
+// =====================================================
+
 async function deleteProduct(id) {
-  const product = products.find(
-    (p) => String(p.id) === String(id)
-  );
+  const product =
+    products.find(function (item) {
+      return String(item.id) ===
+        String(id);
+    });
 
-  if (!product) {
-    return;
-  }
+  if (!product) return;
 
-  const confirmed = confirm(
-    "Delete " +
-      product.name +
-      "?"
-  );
+  const confirmed =
+    window.confirm(
+      "Delete " +
+        product.name +
+        "?"
+    );
 
-  if (!confirmed) {
-    return;
-  }
+  if (!confirmed) return;
 
-  const { error } =
-    await supabaseClient
+  const result =
+    await db
       .from("products")
       .delete()
       .eq("id", id);
 
-  if (error) {
-    console.error(error);
+  if (result.error) {
+    console.error(
+      "DELETE ERROR:",
+      result.error
+    );
 
     alert(
       "Delete failed: " +
-      error.message
+        result.error.message
     );
 
     return;
   }
 
-  products = products.filter(
-    (p) => String(p.id) !== String(id)
-  );
+  products =
+    products.filter(function (
+      item
+    ) {
+      return String(item.id) !==
+        String(id);
+    });
 
   renderProducts();
   renderAdminProducts();
 }
 
-function handleDocumentChange(e) {
-  if (e.target?.id === "productImage") {
+// =====================================================
+// IMAGE PREVIEW / CATEGORY
+// =====================================================
+
+function handleChange(event) {
+  const target =
+    event.target;
+
+  if (!target) return;
+
+  // Image preview
+  if (
+    target.id ===
+    "productImage"
+  ) {
     const file =
-      e.target.files?.[0];
+      target.files?.[0];
 
     const preview =
-      document.getElementById("imagePreview");
+      document.getElementById(
+        "imagePreview"
+      );
 
-    if (!preview) {
-      return;
-    }
+    if (!preview) return;
 
     if (!file) {
       preview.src = "";
-      preview.classList.add("hidden");
+
+      preview.classList.add(
+        "hidden"
+      );
 
       return;
     }
 
-    const reader = new FileReader();
+    const reader =
+      new FileReader();
 
-    reader.onload = () => {
-      preview.src = reader.result;
-      preview.classList.remove("hidden");
-    };
+    reader.onload =
+      function () {
+        preview.src =
+          reader.result;
 
-    reader.readAsDataURL(file);
+        preview.classList.remove(
+          "hidden"
+        );
+      };
+
+    reader.readAsDataURL(
+      file
+    );
   }
 
-  if (e.target?.id === "productCategory") {
+  // Category
+  if (
+    target.id ===
+    "productCategory"
+  ) {
     updateSwitchField();
   }
 }
@@ -1397,27 +2163,39 @@ function updateSwitchField() {
       "productCategory"
     )?.value;
 
-  const switchField =
-    document.getElementById("switchField");
+  const field =
+    document.getElementById(
+      "switchField"
+    );
 
-  if (!switchField) {
-    return;
-  }
+  if (!field) return;
 
   if (category === "keyboard") {
-    switchField.classList.remove("hidden");
+    field.classList.remove(
+      "hidden"
+    );
   } else {
-    switchField.classList.add("hidden");
+    field.classList.add(
+      "hidden"
+    );
   }
 }
 
-supabaseClient.auth.onAuthStateChange(
-  (event, session) => {
+// =====================================================
+// SUPABASE LOGIN STATE
+// =====================================================
+
+db.auth.onAuthStateChange(
+  function (event, session) {
     if (session) {
       showAdminPanel();
     } else {
       showLogin();
     }
   }
+);
+
+console.log(
+  "AH STORE app.js loaded successfully."
 );
 ```
