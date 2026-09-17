@@ -51,6 +51,9 @@ document.addEventListener(
 
     updateLanguage();
 
+    // Keep cart closed when website first opens
+    closeCartDrawer();
+
     await loadProducts();
 
     await checkAdminSession();
@@ -981,6 +984,7 @@ function addToCart(productId) {
 
   openCart();
 
+
 }
 
 
@@ -1310,6 +1314,14 @@ function openCart() {
     .getElementById(
       "cartDrawer"
     )
+    ?.classList.remove(
+      "hidden"
+    );
+
+  document
+    .getElementById(
+      "cartDrawer"
+    )
     ?.classList.add(
       "open"
     );
@@ -1333,6 +1345,14 @@ function closeCartDrawer() {
     )
     ?.classList.remove(
       "open"
+    );
+
+  document
+    .getElementById(
+      "cartDrawer"
+    )
+    ?.classList.add(
+      "hidden"
     );
 
   document
@@ -2688,5 +2708,3 @@ supabaseClient
     }
   );
 ```
-
-            
