@@ -1,114 +1,168 @@
-```html
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <meta name="description" content="AH STORE - Gaming gear in Kurdistan">
   <title>AH STORE | Gaming Gear</title>
+
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+  <!-- HEADER -->
+  <header class="topbar">
+
+    <a href="#home" class="brand">
+      AH<span>STORE</span>
+    </a>
+
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#products">Products</a>
+      <a href="#about">About</a>
+    </nav>
+
+    <div class="actions">
+      <button id="langBtn">کوردی</button>
+      <button id="cartBtn">
+        Cart <b id="cartCount">0</b>
+      </button>
+      <button id="adminBtn">Admin</button>
+    </div>
+
+  </header>
+
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- HERO -->
+    <section id="home" class="hero">
+
+      <div class="hero-content">
+
+        <p class="eyebrow">
+          KURDISTAN GAMING STORE
+        </p>
+
+        <h1>
+          LEVEL UP<br>
+          <span>YOUR SETUP.</span>
+        </h1>
+
+        <p>
+          Gaming keyboards, mice, headsets and accessories
+          for gamers in Kurdistan.
+        </p>
+
+        <a href="#products" class="primary">
+          Shop Now
+        </a>
+
+      </div>
+
+    </section>
+
+
+    <!-- PRODUCTS -->
+    <section id="products" class="section">
+
+      <div class="section-head">
+
+        <div>
+          <p class="eyebrow">
+            AH STORE
+          </p>
+
+          <h2>
+            Gaming Products
+          </h2>
+        </div>
+
+
+        <div class="filters">
+
+          <input
+            id="search"
+            type="text"
+            placeholder="Search products..."
+          >
+
+          <select id="category">
+            <option value="">
+              All Categories
+            </option>
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <div id="productsGrid" class="grid">
+
+        <p>
+          Loading products...
+        </p>
 <header class="header">
+  <div class="logo">AH<span>STORE</span></div>
 
-  <div class="logo">
-    AH<span>STORE</span>
-  </div>
+      </div>
 
+    </section>
+
+
+    <!-- ABOUT -->
+    <section id="about" class="about section">
+
+      <p class="eyebrow">
+        ABOUT AH STORE
+      </p>
   <nav class="nav">
     <a href="#home" data-en="Home" data-ku="سەرەتا">Home</a>
     <a href="#products" data-en="Products" data-ku="بەرهەمەکان">Products</a>
     <a href="#about" data-en="About" data-ku="دەربارە">About</a>
   </nav>
 
+      <h2>
+        Gaming gear, made simple.
+      </h2>
   <div class="header-actions">
-
-    <button id="languageBtn" class="small-btn">
-      کوردی
-    </button>
-
+    <button id="languageBtn" class="small-btn">کوردی</button>
     <button id="cartBtn" class="small-btn">
-      🛒
-      <span data-en="Cart" data-ku="سەبەت">
-        Cart
-      </span>
+      🛒 <span data-en="Cart" data-ku="سەبەت">Cart</span>
       <b id="cartCount">0</b>
     </button>
-
-    <button id="adminBtn" class="admin-btn">
-      🔐 Admin
-    </button>
-
+    <button id="adminBtn" class="admin-btn">🔐 Admin</button>
   </div>
-
 </header>
-
 
 <main>
 
-<!-- HERO -->
-
 <section id="home" class="hero">
-
   <div class="hero-content">
-
-    <p class="hero-small">
-      AH STORE • KURDISTAN
-    </p>
-
-    <h1>
-      LEVEL UP<br>
-      <span>YOUR SETUP.</span>
-    </h1>
-
-    <p
-      data-en="Gaming keyboards, mice, headsets and more."
-      data-ku="کیبۆرد، ماوس، هێدسێت و زیاتر بۆ گەیمینگ."
-    >
+    <p class="hero-small">AH STORE • KURDISTAN</p>
+    <h1>LEVEL UP<br><span>YOUR SETUP.</span></h1>
+    <p data-en="Gaming keyboards, mice, headsets and more." data-ku="کیبۆرد، ماوس، هێدسێت و زیاتر بۆ گەیمینگ.">
       Gaming keyboards, mice, headsets and more.
     </p>
-
-    <a
-      href="#products"
-      class="hero-btn"
-      data-en="SHOP NOW"
-      data-ku="ئێستا بکڕە"
-    >
-      SHOP NOW
-    </a>
-
+    <a href="#products" class="hero-btn" data-en="SHOP NOW" data-ku="ئێستا بکڕە">SHOP NOW</a>
   </div>
-
 </section>
 
-
-<!-- PRODUCTS -->
-
-<section
-  id="products"
-  class="products-section"
->
-
+      <p>
+        Gaming accessories in Kurdistan with
+        cash on delivery and easy WhatsApp ordering.
+      </p>
+<section id="products" class="products-section">
   <div class="section-heading">
-
-    <p>
-      AH STORE
-    </p>
-
-    <h2
-      data-en="GAMING PRODUCTS"
-      data-ku="بەرهەمەکانی گەیمینگ"
-    >
-      GAMING PRODUCTS
-    </h2>
-
+    <p>AH STORE</p>
+    <h2 data-en="GAMING PRODUCTS" data-ku="بەرهەمەکانی گەیمینگ">GAMING PRODUCTS</h2>
   </div>
 
-
+    </section>
   <div class="shop-controls">
-
     <input
       id="searchInput"
       type="search"
@@ -117,142 +171,333 @@
       data-placeholder-ku="گەڕان بەدوای بەرهەم..."
     >
 
-
     <select id="categoryFilter">
-
-      <option
-        value="all"
-        data-en="All Categories"
-        data-ku="هەموو بەشەکان"
-      >
-        All Categories
-      </option>
-
-      <option
-        value="keyboard"
-        data-en="Keyboards"
-        data-ku="کیبۆرد"
-      >
-        Keyboards
-      </option>
-
-      <option
-        value="mouse"
-        data-en="Mice"
-        data-ku="ماوس"
-      >
-        Mice
-      </option>
-
-      <option
-        value="headset"
-        data-en="Headsets"
-        data-ku="هێدسێت"
-      >
-        Headsets
-      </option>
-
-      <option
-        value="mousepad"
-        data-en="Mousepads"
-        data-ku="ماوس پاد"
-      >
-        Mousepads
-      </option>
-
-      <option
-        value="controller"
-        data-en="Controllers"
-        data-ku="کۆنتڕۆڵەر"
-      >
-        Controllers
-      </option>
-
-      <option
-        value="monitor"
-        data-en="Monitors"
-        data-ku="مۆنیتەر"
-      >
-        Monitors
-      </option>
-
-      <option
-        value="accessories"
-        data-en="Accessories"
-        data-ku="ئاکسسواری"
-      >
-        Accessories
-      </option>
-
-      <option
-        value="other"
-        data-en="Other"
-        data-ku="هی تر"
-      >
-        Other
-      </option>
-
+      <option value="all" data-en="All Categories" data-ku="هەموو بەشەکان">All Categories</option>
+      <option value="keyboard" data-en="Keyboards" data-ku="کیبۆرد">Keyboards</option>
+      <option value="mouse" data-en="Mice" data-ku="ماوس">Mice</option>
+      <option value="headset" data-en="Headsets" data-ku="هێدسێت">Headsets</option>
+      <option value="mousepad" data-en="Mousepads" data-ku="ماوس پاد">Mousepads</option>
+      <option value="controller" data-en="Controllers" data-ku="کۆنتڕۆڵەر">Controllers</option>
+      <option value="monitor" data-en="Monitors" data-ku="مۆنیتەر">Monitors</option>
+      <option value="accessories" data-en="Accessories" data-ku="ئاکسسواری">Accessories</option>
+      <option value="other" data-en="Other" data-ku="هی تر">Other</option>
     </select>
-
   </div>
 
+  </main>
+  <div id="productsGrid" class="products-grid">
+    <div class="loading">Loading products...</div>
+  </div>
+</section>
 
-  <div
-    id="productsGrid"
-    class="products-grid"
-  >
+<section id="about" class="about-section">
+  <div>
+    <p class="section-label">AH STORE</p>
+    <h2 data-en="YOUR GAMING STORE IN KURDISTAN" data-ku="فرۆشگای گەیمینگی تۆ لە کوردستان">
+      YOUR GAMING STORE IN KURDISTAN
+    </h2>
+    <p data-en="Gaming equipment with simple ordering through WhatsApp and cash on delivery."
+       data-ku="کەرەستەی گەیمینگ بە داواکارییەکی ئاسان لە ڕێگەی واتسئەپ و پارەدان لە کاتی وەرگرتن.">
+      Gaming equipment with simple ordering through WhatsApp and cash on delivery.
+    </p>
+  </div>
+</section>
 
-    <div class="loading">
-      Loading products...
+  <!-- FOOTER -->
+  <footer>
+    © 2026 AH STORE · Kurdistan, Iraq · WhatsApp ordering
+  </footer>
+</main>
+
+<footer>
+  <div class="logo">AH<span>STORE</span></div>
+  <p>Gaming Gear • Kurdistan</p>
+  <p>© 2026 AH STORE</p>
+</footer>
+
+  <!-- CART -->
+  <aside id="cart" class="drawer">
+
+    <button
+      class="close"
+      id="closeCart">
+      ×
+    </button>
+<!-- CART -->
+<div id="cartOverlay" class="overlay hidden"></div>
+
+    <h2>
+      Your Cart
+    </h2>
+<aside id="cartDrawer" class="cart-drawer">
+  <div class="drawer-header">
+    <h2 data-en="Your Cart" data-ku="سەبەتەکەت">Your Cart</h2>
+    <button id="closeCart">✕</button>
+  </div>
+
+    <div id="cartItems"></div>
+  <div id="cartItems"></div>
+
+    <div class="total">
+      Total:
+      <b id="cartTotal">
+        $0.00
+      </b>
+  <div class="cart-bottom">
+    <div class="cart-total">
+      <span data-en="Total" data-ku="کۆی گشتی">Total</span>
+      <strong id="cartTotal">$0</strong>
+    </div>
+
+    <button
+      id="orderBtn"
+      class="primary full">
+      Order on WhatsApp
+    <button id="whatsappOrder" class="whatsapp-btn">
+      WhatsApp Order 📱
+    </button>
+  </div>
+</aside>
+
+  </aside>
+
+
+  <!-- ADMIN MODAL -->
+  <div id="adminModal" class="modal hidden">
+
+    <div class="modal-box">
+
+      <button
+        class="close"
+        id="closeAdmin">
+        ×
+      </button>
+
+<!-- ADMIN MODAL -->
+<div id="adminModal" class="modal hidden">
+  <div class="modal-box">
+
+      <!-- LOGIN -->
+      <div id="loginPanel">
+    <button id="closeAdmin" class="modal-close">✕</button>
+
+        <p class="eyebrow">
+          PRIVATE AREA
+        </p>
+    <!-- LOGIN -->
+    <div id="loginSection">
+      <div class="modal-title">
+        <p>AH STORE</p>
+        <h2>ADMIN LOGIN</h2>
+      </div>
+
+        <h2>
+          Admin Login
+        </h2>
+      <form id="loginForm">
+        <label>Email</label>
+        <input id="adminEmail" type="email" required>
+
+        <input
+          id="email"
+          type="email"
+          placeholder="Email"
+        >
+        <label>Password</label>
+        <input id="adminPassword" type="password" required>
+
+        <input
+          id="password"
+          type="password"
+          placeholder="Password"
+        >
+        <button class="primary-btn" type="submit">SIGN IN</button>
+
+        <button
+          id="loginBtn"
+          class="primary full">
+          Login
+        </button>
+        <p id="loginMessage" class="form-message"></p>
+      </form>
+    </div>
+
+        <p id="loginMsg"></p>
+    <!-- ADMIN PANEL -->
+    <div id="adminPanel" class="hidden">
+
+      <div class="admin-top">
+        <div>
+          <p>AH STORE</p>
+          <h2>PRODUCT MANAGER</h2>
+        </div>
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+      </div>
+
+      <form id="productForm">
+
+        <input id="productId" type="hidden">
+
+        <label>Product Name</label>
+        <input id="productName" type="text" required>
+
+        <label>Brand</label>
+        <input id="productBrand" type="text">
+
+        <label>Category</label>
+        <select id="productCategory" required>
+          <option value="keyboard">Keyboard</option>
+          <option value="mouse">Mouse</option>
+          <option value="headset">Headset</option>
+          <option value="mousepad">Mousepad</option>
+          <option value="controller">Controller</option>
+          <option value="monitor">Monitor</option>
+          <option value="accessories">Accessories</option>
+          <option value="other">Other</option>
+        </select>
+
+        <div class="two-inputs">
+          <div>
+            <label>USD Price</label>
+            <input id="productUSD" type="number" step="0.01" min="0" required>
+          </div>
+
+          <div>
+            <label>IQD Price</label>
+            <input id="productIQD" type="number" step="1" min="0" required>
+          </div>
+        </div>
+
+      <!-- ADMIN PANEL -->
+      <div id="adminPanel" class="hidden">
+        <label>Connection</label>
+        <select id="productConnection">
+          <option value="Wired">Wired</option>
+          <option value="Wireless">Wireless</option>
+          <option value="Both">Both</option>
+        </select>
+
+        <div class="admin-head">
+        <div id="switchField">
+          <label>Switch Type</label>
+          <input id="productSwitch" type="text" placeholder="Red / Blue / Yellow / Brown...">
+        </div>
+
+          <h2>
+            Products
+          </h2>
+        <label>Product Image</label>
+        <input id="productImage" type="file" accept="image/*">
+
+          <button id="logoutBtn">
+            Logout
+          </button>
+        <img id="imagePreview" class="image-preview hidden" alt="Preview">
+
+        </div>
+        <button class="primary-btn" type="submit" id="saveProductBtn">
+          ADD PRODUCT
+        </button>
+
+        <button type="button" id="cancelEditBtn" class="secondary-btn hidden">
+          CANCEL EDIT
+        </button>
+
+        <!-- PRODUCT FORM -->
+        <form id="productForm">
+
+          <input
+            type="hidden"
+            id="editId"
+          >
+
+          <input
+            id="pName"
+            placeholder="Product name"
+            required
+          >
+
+          <input
+            id="pBrand"
+            placeholder="Brand"
+          >
+
+          <input
+            id="pCategory"
+            placeholder="Category"
+            required
+          >
+
+          <input
+            id="pUsd"
+            type="number"
+            step="0.01"
+            placeholder="Price USD"
+            required
+          >
+
+          <input
+            id="pIqd"
+            type="number"
+            placeholder="Price IQD"
+            required
+          >
+
+          <input
+            id="pConnection"
+            placeholder="Connection: Wired / Wireless / Both"
+          >
+
+          <input
+            id="pSwitch"
+            placeholder="Switch type (keyboard only)"
+          >
+
+          <input
+            id="pImage"
+            type="file"
+            accept="image/*"
+          >
+
+          <button
+            class="primary full"
+            type="submit">
+            Save Product
+          </button>
+
+          <button
+            type="button"
+            id="cancelEdit"
+            class="secondary full hidden">
+            Cancel Edit
+          </button>
+
+        </form>
+
+
+        <div id="adminProducts"></div>
+        <p id="productMessage" class="form-message"></p>
+      </form>
+
+      <div class="admin-products">
+        <h3>YOUR PRODUCTS</h3>
+        <div id="adminProductsList"></div>
+      </div>
+
     </div>
 
   </div>
-
-</section>
-
-
-<!-- ABOUT -->
-
-<section
-  id="about"
-  class="about-section"
->
-
-  <div>
-
-    <p class="section-label">
-      AH STORE
-    </p>
-
-    <h2
-      data-en="YOUR GAMING STORE IN KURDISTAN"
-      data-ku="فرۆشگای گەیمینگی تۆ لە کوردستان"
-    >
-      YOUR GAMING STORE IN KURDISTAN
-    </h2>
-
-    <p
-      data-en="Gaming equipment with simple ordering through WhatsApp and cash on delivery."
-      data-ku="کەرەستەی گەیمینگ بە داواکارییەکی ئاسان لە ڕێگەی واتسئەپ و پارەدان لە کاتی وەرگرتن."
-    >
-      Gaming equipment with simple ordering through WhatsApp and cash on delivery.
-    </p>
-
-  </div>
-
-</section>
-
-</main>
+</div>
 
 
-<!-- FOOTER -->
+  <!-- SUPABASE -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<footer>
+  <!-- AH STORE APP -->
+  <script src="app.js"></script>
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
 
-  <div class="logo">
-    AH<span>STORE</span>
-  </div>
-
-  <p>
-    Gaming G
-```
+</body>
+</html>
