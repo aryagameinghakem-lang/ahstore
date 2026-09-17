@@ -973,7 +973,6 @@ function escapeHTML(value) {
 @@ -584,13 +849,12 @@ function escapeHTML(value) {
     .replace(/'/g, "&#039;");
 }
-
 function escapeAttribute(value) {
   return escapeHTML(value);
 }
@@ -987,4 +986,4 @@ window.changeQuantity = changeQuantity;
 window.checkoutWhatsApp = checkoutWhatsApp;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
-  
+
