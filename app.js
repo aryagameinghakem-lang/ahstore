@@ -1,91 +1,59 @@
-```javascript
-// ==========================================
-// AH STORE - APP.JS
-// Supabase + Products + Cart + Admin
-// ==========================================
+========================= */
 
-const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
-const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
+function setupButtons() {
+  $("adminBtn")?.addEventListener("click", openAdmin);
+  $("languageBtn")?.addEventListener("click", toggleLanguage);
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+  $("cartBtn")?.addEventListener("click", openCart);
+  $("closeCart")?.addEventListener("click", closeCart);
+  $("cartOverlay")?.addEventListener("click", closeCart);
 
-const WHATSAPP_NUMBER = "9647701068935";
+  $("adminBtn")?.addEventListener("click", openAdmin);
+  $("closeAdmin")?.addEventListener("click", closeAdmin);
+  $("langBtn")?.addEventListener("click", toggleLanguage);
 
-let products = [];
-let cart = [];
-let currentLanguage = "en";
-let editingProductId = null;
-let currentDetailsProduct = null;
+  $("whatsappOrder")?.addEventListener("click", checkoutWhatsApp);
 
-// ==========================================
-// START
-// ==========================================
+  $("searchInput")?.addEventListener("input", filterProducts);
+  $("categoryFilter")?.addEventListener("change", filterProducts);
+@@ -37,7 +42,10 @@ function setupButtons() {
+  $("logoutBtn")?.addEventListener("click", logoutAdmin);
 
-document.addEventListener("DOMContentLoaded", () => {
-  setupButtons();
-  setupSearch();
-  setupLanguage();
-  setupAdmin();
-  setupProductForm();
-  updateSwitchField();
+  $("productForm")?.addEventListener("submit", saveProduct);
+  $("cancelEdit")?.addEventListener("click", cancelEdit);
+  $("cancelEditBtn")?.addEventListener("click", cancelEdit);
 
-  loadProducts();
-});
-
-// ==========================================
-// LOAD PRODUCTS
-// ==========================================
-
-async function loadProducts() {
-  const grid = document.getElementById("productsGrid");
-
-  try {
-    const { data, error } = await supabaseClient
-      .from("products")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Products loading error:", error);
-
-      if (grid) {
-        grid.innerHTML = `
-          <div class="loading">
-            Failed to load products.
-          </div>
-        `;
-      }
-
-      return;
-    }
-
-    products = data || [];
-
-    console.log("Products loaded:", products);
-
-    renderProducts(products);
-    renderAdminProducts();
-  } catch (error) {
-    console.error("Unexpected loading error:", error);
-  }
+  $("productCategory")?.addEventListener("change", updateSwitchField);
+  $("productImage")?.addEventListener("change", previewImage);
 }
 
-// ==========================================
-// RENDER PRODUCTS
-// ==========================================
+/* =========================
+@@ -51,13 +59,16 @@ async function loadProducts() {
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    showProductsError();
+    console.error("Products error:", error);
+    $("productsGrid").innerHTML = `
+      <div class="loading">Unable to load products.</div>
+    `;
+    return;
+  }
+
+  products = data || [];
+  renderProducts(products);
+  renderAdminProducts();
+}
 
 function renderProducts(list) {
-  const grid = document.getElementById("productsGrid");
+@@ -67,26 +78,30 @@ function renderProducts(list) {
 
-  if (!grid) return;
-
-  grid.innerHTML = "";
-
-  if (!list || list.length === 0) {
-    grid.innerHTML = `
+  if (!list.length) {
+    container.innerHTML = `
+      <div class="empty-products">
+        <h3>No products found</h3>
+        <p>Try another search or category.</p>
       <div class="loading">
         No products found.
       </div>
@@ -93,489 +61,251 @@ function renderProducts(list) {
     return;
   }
 
-  list.forEach((product) => {
-    const card = document.createElement("article");
-    card.className = "product-card";
+  container.innerHTML = list.map(product => `
+    <div class="product-card">
 
-    const imageArea = document.createElement("div");
+      <div class="product-image">
+        ${
+          product.image_url
+            ? `<img src="${escapeAttribute(product.image_url)}" alt="${escapeAttribute(product.name)}">`
+            ? `<img src="${escapeHTML(product.image_url)}" alt="${escapeHTML(product.name)}">`
+            : `<div class="no-image">AHSTORE</div>`
+        }
+      </div>
 
-    if (product.image_url) {
-      const img = document.createElement("img");
-      img.className = "product-image";
-      img.src = product.image_url;
-      img.alt = product.name || "Product";
-      img.loading = "lazy";
+      <div class="product-info">
+        <div class="product-brand">${escapeHTML(product.brand || "")}</div>
 
-      img.onerror = () => {
-        imageArea.innerHTML = `<div class="no-image">NO IMAGE</div>`;
-      };
+        <div class="product-brand">
+          ${escapeHTML(product.brand || "")}
+        </div>
 
-      imageArea.appendChild(img);
-    } else {
-      imageArea.innerHTML = `<div class="no-image">NO IMAGE</div>`;
-    }
+        <h3>${escapeHTML(product.name)}</h3>
 
-    const info = document.createElement("div");
-    info.className = "product-info";
+        <div class="product-meta">
+@@ -99,19 +114,25 @@ function renderProducts(list) {
+        </div>
 
-    const brand = document.createElement("div");
-    brand.className = "product-brand";
-    brand.textContent = product.brand || "AH STORE";
+        ${
+          product.switch_type && product.category?.toLowerCase() === "keyboard"
+            ? `<div class="switch-type">Switch: ${escapeHTML(product.switch_type)}</div>`
+          product.switch_type &&
+          product.category?.toLowerCase() === "keyboard"
+            ? `<div class="switch-type">
+                Switch: ${escapeHTML(product.switch_type)}
+               </div>`
+            : ""
+        }
 
-    const name = document.createElement("div");
-    name.className = "product-name";
-    name.textContent = product.name || "Unnamed Product";
+        <div class="price">
+          $${Number(product.price_usd || 0).toFixed(2)}
+          <small>${Number(product.price_iqd || 0).toLocaleString()} IQD</small>
+          <small>
+            ${Number(product.price_iqd || 0).toLocaleString()} IQD
+          </small>
+        </div>
 
-    const details = document.createElement("div");
-    details.className = "product-details";
+        <button class="add-cart" onclick="addToCart('${product.id}')">
+          ${language === "ku" ? "زیادکردن بۆ سەبەتە" : "Add to Cart"}
+          ${language === "ku" ? "زیادکردن بۆ سەبەت" : "Add to Cart"}
+        </button>
 
-    if (product.connection) {
-      const connection = document.createElement("span");
-      connection.className = "detail-tag";
-      connection.textContent = product.connection;
-      details.appendChild(connection);
-    }
+      </div>
+    </div>
+  `).join("");
+@@ -122,39 +143,31 @@ function filterProducts() {
+  const category = $("categoryFilter")?.value || "all";
 
-    if (
-      product.category === "keyboard" &&
-      product.switch_type
-    ) {
-      const switchTag = document.createElement("span");
-      switchTag.className = "detail-tag";
-      switchTag.textContent = product.switch_type;
-      details.appendChild(switchTag);
-    }
-
-    const price = document.createElement("div");
-    price.className = "product-price";
-
-    const usd = document.createElement("span");
-    usd.className = "price-usd";
-    usd.textContent = `$${Number(product.price_usd || 0).toFixed(2)}`;
-
-    const iqd = document.createElement("span");
-    iqd.className = "price-iqd";
-    iqd.textContent = `${formatIQD(product.price_iqd)} IQD`;
-
-    price.appendChild(usd);
-    price.appendChild(iqd);
-
-    const addButton = document.createElement("button");
-    addButton.className = "add-cart";
-    addButton.textContent =
-      currentLanguage === "ku" ? "زیادکردن بۆ سەبەت" : "ADD TO CART";
-
-    // IMPORTANT:
-    // No inline onclick.
-    addButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      addToCart(product.id);
-    });
-
-    info.appendChild(brand);
-    info.appendChild(name);
-    info.appendChild(details);
-    info.appendChild(price);
-    info.appendChild(addButton);
-
-    card.appendChild(imageArea);
-    card.appendChild(info);
-
-    // Clicking the product opens details.
-    card.addEventListener("click", () => {
-      openProductDetails(product.id);
-    });
-
-    grid.appendChild(card);
-  });
-}
-
-// ==========================================
-// SEARCH + CATEGORY
-// ==========================================
-
-function setupSearch() {
-  const searchInput = document.getElementById("searchInput");
-  const categoryFilter = document.getElementById("categoryFilter");
-
-  if (searchInput) {
-    searchInput.addEventListener("input", filterProducts);
-  }
-
-  if (categoryFilter) {
-    categoryFilter.addEventListener("change", filterProducts);
-  }
-}
-
-function filterProducts() {
-  const searchInput = document.getElementById("searchInput");
-  const categoryFilter = document.getElementById("categoryFilter");
-
-  const search = (searchInput?.value || "").toLowerCase().trim();
-  const category = categoryFilter?.value || "all";
-
-  const filtered = products.filter((product) => {
+  const filtered = products.filter(product => {
     const matchesSearch =
-      !search ||
-      String(product.name || "").toLowerCase().includes(search) ||
-      String(product.brand || "").toLowerCase().includes(search) ||
-      String(product.category || "").toLowerCase().includes(search);
+      `${product.name} ${product.brand} ${product.category}`
+        .toLowerCase()
+        .includes(search);
+    const text = `
+      ${product.name || ""}
+      ${product.brand || ""}
+      ${product.category || ""}
+    `.toLowerCase();
+
+    const searchMatch = text.includes(search);
 
     const matchesCategory =
+    const categoryMatch =
       category === "all" ||
-      String(product.category || "").toLowerCase() === category;
+      (product.category || "").toLowerCase() === category.toLowerCase();
 
     return matchesSearch && matchesCategory;
+    return searchMatch && categoryMatch;
   });
 
   renderProducts(filtered);
 }
 
-// ==========================================
-// PRODUCT DETAILS
-// ==========================================
-
-function openProductDetails(productId) {
-  const product = products.find(
-    (p) => String(p.id) === String(productId)
-  );
-
-  if (!product) {
-    console.error("Product not found:", productId);
-    return;
-  }
-
-  currentDetailsProduct = product;
-
-  const overlay = document.getElementById("productDetailsOverlay");
-  const modal = document.getElementById("productDetailsModal");
-
-  const image = document.getElementById("detailsImage");
-  const noImage = document.getElementById("detailsNoImage");
-
-  const brand = document.getElementById("detailsBrand");
-  const name = document.getElementById("detailsName");
-
-  const category = document.getElementById("detailsCategory");
-  const connection = document.getElementById("detailsConnection");
-
-  const switchRow = document.getElementById("detailsSwitchRow");
-  const switchText = document.getElementById("detailsSwitch");
-
-  const usd = document.getElementById("detailsUSD");
-  const iqd = document.getElementById("detailsIQD");
-
-  if (!overlay) {
-    console.error("Product details overlay not found.");
-    return;
-  }
-
-  if (image) {
-    if (product.image_url) {
-      image.src = product.image_url;
-      image.alt = product.name || "Product";
-      image.classList.remove("hidden");
-    } else {
-      image.removeAttribute("src");
-      image.classList.add("hidden");
-    }
-  }
-
-  if (noImage) {
-    if (product.image_url) {
-      noImage.classList.add("hidden");
-    } else {
-      noImage.classList.remove("hidden");
-    }
-  }
-
-  if (brand) {
-    brand.textContent = product.brand || "AH STORE";
-  }
-
-  if (name) {
-    name.textContent = product.name || "Unnamed Product";
-  }
-
-  if (category) {
-    category.textContent = capitalize(
-      product.category || "Other"
-    );
-  }
-
-  if (connection) {
-    connection.textContent =
-      product.connection || "Not specified";
-  }
-
-  if (switchRow && switchText) {
-    if (
-      product.category === "keyboard" &&
-      product.switch_type
-    ) {
-      switchRow.classList.remove("hidden");
-      switchText.textContent = product.switch_type;
-    } else {
-      switchRow.classList.add("hidden");
-    }
-  }
-
-  if (usd) {
-    usd.textContent = `$${Number(
-      product.price_usd || 0
-    ).toFixed(2)}`;
-  }
-
-  if (iqd) {
-    iqd.textContent = `${formatIQD(product.price_iqd)} IQD`;
-  }
-
-  overlay.classList.remove("hidden");
-
-  if (modal) {
-    modal.scrollTop = 0;
+function showProductsError() {
+  const container = $("productsGrid");
+  if (container) {
+    container.innerHTML = `
+      <div class="empty-products">
+        <h3>Unable to load products</h3>
+        <p>Please refresh the page.</p>
+      </div>
+    `;
   }
 }
 
-function closeProductDetails() {
-  const overlay = document.getElementById("productDetailsOverlay");
+/* =========================
+   CART
+========================= */
 
-  if (overlay) {
-    overlay.classList.add("hidden");
-  }
+function addToCart(id) {
+  const product = products.find(p => p.id === id);
 
-  currentDetailsProduct = null;
-}
+  if (!product) return;
 
-// ==========================================
-// CART
-// ==========================================
+  const existing = cart.find(item => item.id === id);
+@@ -178,12 +191,14 @@ function addToCart(id) {
 
-function addToCart(productId) {
-  const product = products.find(
-    (p) => String(p.id) === String(productId)
-  );
-
-  if (!product) {
-    console.error("Product not found:", productId);
-    return;
-  }
-
-  const existing = cart.find(
-    (item) => String(item.id) === String(product.id)
-  );
-
-  if (existing) {
-    existing.quantity += 1;
-  } else {
-    cart.push({
-      ...product,
-      quantity: 1
-    });
-  }
-
-  saveCart();
-  renderCart();
-  openCart();
-
-  console.log("Added to cart:", product.name);
-}
-
-function removeFromCart(productId) {
-  cart = cart.filter(
-    (item) => String(item.id) !== String(productId)
-  );
+function removeFromCart(id) {
+  cart = cart.filter(item => item.id !== id);
 
   saveCart();
   renderCart();
 }
 
-function changeQuantity(productId, amount) {
-  const item = cart.find(
-    (p) => String(p.id) === String(productId)
-  );
+function changeQuantity(id, amount) {
+  const item = cart.find(item => item.id === id);
 
   if (!item) return;
 
   item.quantity += amount;
-
-  if (item.quantity <= 0) {
-    removeFromCart(productId);
-    return;
-  }
-
-  saveCart();
-  renderCart();
+@@ -198,172 +213,217 @@ function changeQuantity(id, amount) {
 }
 
 function saveCart() {
-  try {
-    localStorage.setItem("ah_store_cart", JSON.stringify(cart));
-  } catch (error) {
-    console.error("Could not save cart:", error);
-  }
-}
-
-function loadCart() {
-  try {
-    const saved = localStorage.getItem("ah_store_cart");
-
-    if (saved) {
-      cart = JSON.parse(saved);
-
-      if (!Array.isArray(cart)) {
-        cart = [];
-      }
-    }
-  } catch (error) {
-    console.error("Could not load cart:", error);
-    cart = [];
-  }
+  localStorage.setItem("ahstore_cart", JSON.stringify(cart));
+  localStorage.setItem(
+    "ahstore_cart",
+    JSON.stringify(cart)
+  );
 }
 
 function renderCart() {
-  const cartItems = document.getElementById("cartItems");
-  const cartCount = document.getElementById("cartCount");
-  const cartTotal = document.getElementById("cartTotal");
+  const container = $("cartItems");
+  const count = $("cartCount");
+  const totalUSD = $("cartTotalUSD");
+  const totalIQD = $("cartTotalIQD");
+  const total = $("cartTotal");
 
-  if (!cartItems) return;
+  if (!container) return;
 
-  cartItems.innerHTML = "";
-
-  const totalQuantity = cart.reduce(
-    (sum, item) => sum + Number(item.quantity || 0),
+  const totalItems = cart.reduce(
+    (sum, item) => sum + item.quantity,
     0
   );
 
-  if (cartCount) {
-    cartCount.textContent = totalQuantity;
+  if (count) {
+    count.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+    count.textContent = totalItems;
   }
 
-  if (cart.length === 0) {
-    cartItems.innerHTML = `
+  if (!cart.length) {
+    container.innerHTML = `
+      <div class="empty-cart">
+        <h3>${language === "ku" ? "سەبەتەکە بەتاڵە" : "Your cart is empty"}</h3>
       <div class="loading">
-        ${
-          currentLanguage === "ku"
-            ? "سەبەتەکە بەتاڵە"
-            : "Your cart is empty."
-        }
+        ${language === "ku"
+          ? "سەبەتەکە بەتاڵە"
+          : "Your cart is empty"}
       </div>
     `;
 
-    if (cartTotal) {
-      cartTotal.textContent = "$0.00";
+    if (totalUSD) totalUSD.textContent = "$0.00";
+    if (totalIQD) totalIQD.textContent = "0 IQD";
+    if (total) {
+      total.textContent = "$0";
     }
 
     return;
   }
 
+  let usd = 0;
+  let iqd = 0;
   let totalUSD = 0;
 
-  cart.forEach((item) => {
-    const quantity = Number(item.quantity || 1);
-    const itemPrice = Number(item.price_usd || 0);
+  container.innerHTML = cart.map(item => {
+    usd += Number(item.price_usd || 0) * item.quantity;
+    iqd += Number(item.price_iqd || 0) * item.quantity;
 
-    totalUSD += itemPrice * quantity;
+    totalUSD +=
+      Number(item.price_usd || 0) *
+      item.quantity;
 
-    const row = document.createElement("div");
-    row.className = "cart-item";
+    return `
+      <div class="cart-item">
 
-    const info = document.createElement("div");
-    info.className = "cart-item-info";
+        <div>
+          <strong>${escapeHTML(item.name)}</strong>
+          <div>$${Number(item.price_usd || 0).toFixed(2)}</div>
+          <div>
+            $${Number(item.price_usd || 0).toFixed(2)}
+          </div>
+        </div>
 
-    const itemName = document.createElement("div");
-    itemName.className = "cart-item-name";
-    itemName.textContent = item.name;
+        <div class="quantity">
+          <button onclick="changeQuantity('${item.id}', -1)">−</button>
 
-    const itemPrice = document.createElement("div");
-    itemPrice.className = "cart-item-price";
-    itemPrice.textContent =
-      `$${Number(item.price_usd || 0).toFixed(2)} × ${quantity}`;
+          <button onclick="changeQuantity('${item.id}', -1)">
+            −
+          </button>
 
-    const quantityBox = document.createElement("div");
-    quantityBox.className = "quantity";
+          <span>${item.quantity}</span>
+          <button onclick="changeQuantity('${item.id}', 1)">+</button>
 
-    const minus = document.createElement("button");
-    minus.type = "button";
-    minus.textContent = "−";
+          <button onclick="changeQuantity('${item.id}', 1)">
+            +
+          </button>
 
-    minus.addEventListener("click", () => {
-      changeQuantity(item.id, -1);
-    });
+        </div>
 
-    const number = document.createElement("span");
-    number.textContent = quantity;
+        <button class="remove-cart" onclick="removeFromCart('${item.id}')">
+        <button
+          class="remove-cart"
+          onclick="removeFromCart('${item.id}')">
+          ×
+        </button>
 
-    const plus = document.createElement("button");
-    plus.type = "button";
-    plus.textContent = "+";
+      </div>
+    `;
+  }).join("");
 
-    plus.addEventListener("click", () => {
-      changeQuantity(item.id, 1);
-    });
-
-    quantityBox.appendChild(minus);
-    quantityBox.appendChild(number);
-    quantityBox.appendChild(plus);
-
-    info.appendChild(itemName);
-    info.appendChild(itemPrice);
-    info.appendChild(quantityBox);
-
-    const remove = document.createElement("button");
-    remove.className = "remove-cart";
-    remove.type = "button";
-    remove.textContent = "✕";
-
-    remove.addEventListener("click", () => {
-      removeFromCart(item.id);
-    });
-
-    row.appendChild(info);
-    row.appendChild(remove);
-
-    cartItems.appendChild(row);
-  });
-
-  if (cartTotal) {
-    cartTotal.textContent = `$${totalUSD.toFixed(2)}`;
+  if (totalUSD) totalUSD.textContent = `$${usd.toFixed(2)}`;
+  if (totalIQD) totalIQD.textContent = `${iqd.toLocaleString()} IQD`;
+  if (total) {
+    total.textContent = `$${totalUSD.toFixed(2)}`;
   }
 }
 
 function openCart() {
-  const drawer = document.getElementById("cartDrawer");
-  const overlay = document.getElementById("cartOverlay");
-
-  if (drawer) {
-    drawer.classList.add("open");
-  }
-
-  if (overlay) {
-    overlay.classList.remove("hidden");
-  }
+  $("cartDrawer")?.classList.add("open");
+  $("overlay")?.classList.add("show");
+  $("cartOverlay")?.classList.remove("hidden");
 }
 
 function closeCart() {
-  const drawer = document.getElementById("cartDrawer");
-  const overlay = document.getElementById("cartOverlay");
-
-  if (drawer) {
-    drawer.classList.remove("open");
-  }
-
-  if (overlay) {
-    overlay.classList.add("hidden");
-  }
+  $("cartDrawer")?.classList.remove("open");
+  $("overlay")?.classList.remove("show");
+  $("cartOverlay")?.classList.add("hidden");
 }
 
-// ==========================================
-// WHATSAPP ORDER
-// ==========================================
+/* =========================
+   WHATSAPP
+========================= */
 
-function sendWhatsAppOrder() {
-  if (cart.length === 0) {
+function checkoutWhatsApp() {
+  if (!cart.length) {
+    alert(language === "ku" ? "سەبەتەکە بەتاڵە" : "Your cart is empty.");
     alert(
-      currentLanguage === "ku"
+      language === "ku"
         ? "سەبەتەکە بەتاڵە."
         : "Your cart is empty."
     );
@@ -583,942 +313,678 @@ function sendWhatsAppOrder() {
   }
 
   let message =
-    currentLanguage === "ku"
+    language === "ku"
+      ? "سڵاو AHSTORE، دەمەوێت ئەم بەرهەمانە بکڕم:\n\n"
+      : "Hello AHSTORE, I would like to order:\n\n";
       ? "سڵاو AH STORE، دەمەوێت ئەم بەرهەمانە داوا بکەم:\n\n"
       : "Hello AH STORE, I would like to order:\n\n";
 
-  let totalUSD = 0;
-
-  cart.forEach((item) => {
-    const quantity = Number(item.quantity || 1);
-    const price = Number(item.price_usd || 0);
-
-    totalUSD += price * quantity;
-
-    message += `• ${item.name} × ${quantity} — $${(
-      price * quantity
-    ).toFixed(2)}\n`;
+  cart.forEach(item => {
+    message += `• ${item.name} x${item.quantity}\n`;
+    message +=
+      `• ${item.name} x${item.quantity}\n`;
   });
 
-  message += `\nTotal: $${totalUSD.toFixed(2)}\n`;
-
   message +=
-    currentLanguage === "ku"
-      ? "\nتکایە زانیارییەکانی گەیاندن بنێرن."
-      : "\nPlease send me the delivery details.";
+    language === "ku"
+      ? "\nتکایە زانیارییەکانی داواکارییەکەم بۆ بنێرە."
+      : "\nPlease send me the order details.";
 
+  window.open(
+    `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
   const url =
-    `https://wa.me/${WHATSAPP_NUMBER}?text=` +
+    `https://wa.me/${WHATSAPP}?text=` +
     encodeURIComponent(message);
 
   window.open(url, "_blank");
 }
 
-// ==========================================
-// LANGUAGE
-// ==========================================
-
-function setupLanguage() {
-  const languageBtn = document.getElementById("languageBtn");
-
-  if (languageBtn) {
-    languageBtn.addEventListener("click", toggleLanguage);
-  }
-}
+/* =========================
+   LANGUAGE
+========================= */
 
 function toggleLanguage() {
-  currentLanguage =
-    currentLanguage === "en" ? "ku" : "en";
+  language = language === "en" ? "ku" : "en";
+  localStorage.setItem("ahstore_language", language);
+  language =
+    language === "en"
+      ? "ku"
+      : "en";
 
-  document.body.classList.toggle(
-    "rtl",
-    currentLanguage === "ku"
+  localStorage.setItem(
+    "ahstore_language",
+    language
   );
 
-  document.documentElement.lang =
-    currentLanguage === "ku" ? "ku" : "en";
-
-  const elements = document.querySelectorAll(
-    "[data-en][data-ku]"
-  );
-
-  elements.forEach((element) => {
-    element.textContent =
-      currentLanguage === "ku"
-        ? element.dataset.ku
-        : element.dataset.en;
-  });
-
-  const searchInput =
-    document.getElementById("searchInput");
-
-  if (searchInput) {
-    searchInput.placeholder =
-      currentLanguage === "ku"
-        ? searchInput.dataset.placeholderKu
-        : searchInput.dataset.placeholderEn;
-  }
-
-  const languageBtn =
-    document.getElementById("languageBtn");
-
-  if (languageBtn) {
-    languageBtn.textContent =
-      currentLanguage === "ku" ? "English" : "کوردی";
-  }
-
-  renderProducts(getFilteredProducts());
+  applyLanguage();
+  renderProducts(products);
   renderCart();
 }
 
-function getFilteredProducts() {
-  const searchInput =
-    document.getElementById("searchInput");
+function applyLanguage() {
+  document.documentElement.dir = language === "ku" ? "rtl" : "ltr";
+  document.documentElement.lang = language === "ku" ? "ku" : "en";
 
-  const categoryFilter =
-    document.getElementById("categoryFilter");
+  const langBtn = $("langBtn");
+  if (langBtn) {
+    langBtn.textContent = language === "ku" ? "English" : "کوردی";
+  }
+  document.documentElement.lang =
+    language === "ku" ? "ku" : "en";
 
-  const search = (
-    searchInput?.value || ""
-  ).toLowerCase().trim();
+  const translations = {
+    heroTitle: {
+      en: "LEVEL UP YOUR SETUP.",
+      ku: "سیستەمەکەت بەرزتر بکەرەوە."
+    },
+    heroText: {
+      en: "Gaming gear built for players.",
+      ku: "کەرەستەی گەیمینگ بۆ یاریزانان."
+    },
+    productsTitle: {
+      en: "OUR PRODUCTS",
+      ku: "بەرهەمەکانمان"
+    },
+    searchInput: {
+      en: "Search products...",
+      ku: "گەڕان بۆ بەرهەم..."
+    },
+    aboutTitle: {
+      en: "ABOUT AHSTORE",
+      ku: "دەربارەی AHSTORE"
+    }
+  };
+  document.documentElement.dir =
+    language === "ku" ? "rtl" : "ltr";
 
-  const category =
-    categoryFilter?.value || "all";
+  Object.entries(translations).forEach(([id, text]) => {
+    const element = $(id);
+    if (!element) return;
+  const elements =
+    document.querySelectorAll("[data-en]");
 
-  return products.filter((product) => {
-    const matchesSearch =
-      !search ||
-      String(product.name || "")
-        .toLowerCase()
-        .includes(search) ||
-      String(product.brand || "")
-        .toLowerCase()
-        .includes(search);
+    if ("placeholder" in element) {
+      element.placeholder = text[language];
+    } else {
+      element.textContent = text[language];
+  elements.forEach(element => {
 
-    const matchesCategory =
-      category === "all" ||
-      String(product.category || "").toLowerCase() ===
-        category;
+    const text =
+      language === "ku"
+        ? element.dataset.ku
+        : element.dataset.en;
 
-    return matchesSearch && matchesCategory;
+    if (text) {
+      element.textContent = text;
+    }
   });
+
+  const input =
+    $("searchInput");
+
+  if (input) {
+    input.placeholder =
+      language === "ku"
+        ? input.dataset.placeholderKu
+        : input.dataset.placeholderEn;
+  }
+
+  const languageButton =
+    $("languageBtn");
+
+  if (languageButton) {
+    languageButton.textContent =
+      language === "ku"
+        ? "English"
+        : "کوردی";
+  }
 }
 
-// ==========================================
-// ADMIN
-// ==========================================
-
-function setupAdmin() {
-  const adminBtn = document.getElementById("adminBtn");
-  const closeAdmin = document.getElementById("closeAdmin");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const loginForm = document.getElementById("loginForm");
-
-  if (adminBtn) {
-    adminBtn.addEventListener("click", openAdmin);
-  }
-
-  if (closeAdmin) {
-    closeAdmin.addEventListener("click", closeAdminModal);
-  }
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", logoutAdmin);
-  }
-
-  if (loginForm) {
-    loginForm.addEventListener("submit", loginAdmin);
-  }
-
-  checkAdminSession();
-}
+/* =========================
+   ADMIN
+========================= */
 
 function openAdmin() {
-  const modal = document.getElementById("adminModal");
+  $("adminModal")?.classList.add("show");
+  $("overlay")?.classList.add("show");
+  $("adminModal")?.classList.remove("hidden");
 
-  if (modal) {
-    modal.classList.remove("hidden");
-  }
+  checkAuth();
 }
 
-function closeAdminModal() {
-  const modal = document.getElementById("adminModal");
+function closeAdmin() {
+  $("adminModal")?.classList.remove("show");
+  $("overlay")?.classList.remove("show");
+  $("adminModal")?.classList.add("hidden");
+}
 
-  if (modal) {
-    modal.classList.add("hidden");
-  }
+async function checkAuth() {
+
+  const {
+    data: { session }
+  } = await db.auth.getSession();
+@@ -376,206 +436,411 @@ async function checkAuth() {
+}
+
+function showLoginPanel() {
+  if ($("adminLogin")) $("adminLogin").style.display = "block";
+  if ($("adminPanel")) $("adminPanel").style.display = "none";
+
+  $("loginSection")?.classList.remove("hidden");
+
+  $("adminPanel")?.classList.add("hidden");
+}
+
+function showAdminPanel() {
+  if ($("adminLogin")) $("adminLogin").style.display = "none";
+  if ($("adminPanel")) $("adminPanel").style.display = "block";
+
+  $("loginSection")?.classList.add("hidden");
+
+  $("adminPanel")?.classList.remove("hidden");
+
+  renderAdminProducts();
 }
 
 async function loginAdmin(event) {
+
   event.preventDefault();
 
+  const email = $("adminEmail")?.value.trim();
+  const password = $("adminPassword")?.value;
   const email =
-    document.getElementById("adminEmail")?.value.trim();
+    $("adminEmail")?.value.trim();
 
   const password =
-    document.getElementById("adminPassword")?.value;
+    $("adminPassword")?.value;
 
   const message =
-    document.getElementById("loginMessage");
+    $("loginMessage");
 
   if (!email || !password) return;
 
-  if (message) {
-    message.textContent = "Signing in...";
-  }
-
-  const { data, error } =
-    await supabaseClient.auth.signInWithPassword({
+  const { error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
+  const { error } =
+    await db.auth.signInWithPassword({
       email,
       password
     });
 
   if (error) {
-    console.error("Login error:", error);
+    alert("Login failed: " + error.message);
 
     if (message) {
       message.textContent =
-        error.message || "Login failed.";
+        "Login failed: " + error.message;
     }
 
     return;
   }
-
-  console.log("Admin logged in:", data.user);
 
   if (message) {
     message.textContent = "";
   }
 
   showAdminPanel();
-  renderAdminProducts();
-}
-
-async function checkAdminSession() {
-  const {
-    data: { session }
-  } = await supabaseClient.auth.getSession();
-
-  if (session) {
-    showAdminPanel();
-  } else {
-    showLoginPanel();
-  }
-}
-
-function showAdminPanel() {
-  const loginSection =
-    document.getElementById("loginSection");
-
-  const adminPanel =
-    document.getElementById("adminPanel");
-
-  if (loginSection) {
-    loginSection.classList.add("hidden");
-  }
-
-  if (adminPanel) {
-    adminPanel.classList.remove("hidden");
-  }
-
-  renderAdminProducts();
-}
-
-function showLoginPanel() {
-  const loginSection =
-    document.getElementById("loginSection");
-
-  const adminPanel =
-    document.getElementById("adminPanel");
-
-  if (loginSection) {
-    loginSection.classList.remove("hidden");
-  }
-
-  if (adminPanel) {
-    adminPanel.classList.add("hidden");
-  }
 }
 
 async function logoutAdmin() {
-  await supabaseClient.auth.signOut();
 
-  resetProductForm();
+  await db.auth.signOut();
+
   showLoginPanel();
 }
 
-// ==========================================
-// ADMIN PRODUCT FORM
-// ==========================================
+/* =========================
+   ADMIN PRODUCTS
+   ADD / EDIT PRODUCTS
+========================= */
 
-function setupProductForm() {
-  const form = document.getElementById("productForm");
+async function saveProduct(event) {
+
+  event.preventDefault();
+
+  const name = $("productName")?.value.trim();
+  const brand = $("productBrand")?.value.trim();
+  const category = $("productCategory")?.value;
+  const priceUSD = Number($("productUSD")?.value || 0);
+  const priceIQD = Number($("productIQD")?.value || 0);
+  const connection = $("productConnection")?.value || "";
+  const switchType = $("productSwitch")?.value || "";
+  const imageFile = $("productImage")?.files?.[0];
+
+  if (!name || !category) {
+    alert("Please enter the product name and category.");
+    return;
+  const name =
+    $("productName").value.trim();
+
+  const brand =
+    $("productBrand").value.trim();
+
   const category =
-    document.getElementById("productCategory");
+    $("productCategory").value;
 
-  const cancel =
-    document.getElementById("cancelEditBtn");
+  const priceUSD =
+    Number($("productUSD").value || 0);
 
-  const image =
-    document.getElementById("productImage");
+  const priceIQD =
+    Number($("productIQD").value || 0);
 
-  if (form) {
-    form.addEventListener("submit", saveProduct);
+  const connection =
+    $("productConnection").value;
+
+  const switchType =
+    $("productSwitch").value.trim();
+
+  const imageFile =
+    $("productImage").files?.[0];
+
+  let imageUrl = "";
+
+  if (editingId) {
+
+    const oldProduct =
+      products.find(p => p.id === editingId);
+
+    imageUrl =
+      oldProduct?.image_url || "";
   }
 
-  if (category) {
-    category.addEventListener(
-      "change",
-      updateSwitchField
+  let imageUrl = editingId
+    ? products.find(p => p.id === editingId)?.image_url || ""
+    : "";
+  /* IMAGE UPLOAD */
+
+  if (imageFile) {
+
+    const extension =
+      imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      imageFile.name
+        .split(".")
+        .pop()
+        .toLowerCase();
+
+    const fileName = `${crypto.randomUUID()}.${extension}`;
+    const fileName =
+      `${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await db.storage
+      .from("products")
+      .upload(fileName, imageFile);
+    const { error } =
+      await db.storage
+        .from("products")
+        .upload(
+          fileName,
+          imageFile
+        );
+
+    if (error) {
+
+      alert(
+        "Image upload failed: " +
+        error.message
+      );
+
+    if (uploadError) {
+      alert("Image upload failed: " + uploadError.message);
+      return;
+    }
+
+    const { data } = db.storage
+      .from("products")
+      .getPublicUrl(fileName);
+    const { data } =
+      db.storage
+        .from("products")
+        .getPublicUrl(fileName);
+
+    imageUrl = data.publicUrl;
+    imageUrl =
+      data.publicUrl;
+  }
+
+  const productData = {
+
+    name,
+    brand,
+    category,
+    price_usd: priceUSD,
+    price_iqd: priceIQD,
+
+    price_usd:
+      priceUSD,
+
+    price_iqd:
+      priceIQD,
+
+    connection,
+    switch_type: category.toLowerCase() === "keyboard" ? switchType : null,
+    image_url: imageUrl
+
+    switch_type:
+      category === "keyboard"
+        ? switchType
+        : null,
+
+    image_url:
+      imageUrl
+  };
+
+  let result;
+
+  if (editingId) {
+    result = await db
+      .from("products")
+      .update(productData)
+      .eq("id", editingId);
+
+    result =
+      await db
+        .from("products")
+        .update(productData)
+        .eq("id", editingId);
+
+  } else {
+    result = await db
+      .from("products")
+      .insert(productData);
+
+    result =
+      await db
+        .from("products")
+        .insert(productData);
+  }
+
+  if (result.error) {
+    alert("Could not save product: " + result.error.message);
+
+    alert(
+      "Could not save product: " +
+      result.error.message
     );
+
+    return;
   }
 
-  if (cancel) {
-    cancel.addEventListener(
-      "click",
-      resetProductForm
-    );
-  }
+  alert(editingId ? "Product updated!" : "Product added!");
+  alert(
+    editingId
+      ? "Product updated!"
+      : "Product added!"
+  );
 
-  if (image) {
-    image.addEventListener(
-      "change",
-      previewImage
-    );
-  }
+  editingId = null;
+  $("productForm")?.reset();
+
+  $("productForm").reset();
+
+  $("cancelEditBtn")
+    ?.classList.add("hidden");
+
+  $("saveProductBtn").textContent =
+    "ADD PRODUCT";
+
+  await loadProducts();
+  renderAdminProducts();
 }
 
+/* =========================
+   ADMIN PRODUCT LIST
+========================= */
+
+function renderAdminProducts() {
+  const container = $("adminProducts");
+
+  const container =
+    $("adminProductsList");
+
+  if (!container) return;
+
+  if (!products.length) {
+    container.innerHTML = "<p>No products yet.</p>";
+
+    container.innerHTML =
+      "<p>No products yet.</p>";
+
+    return;
+  }
+
+  container.innerHTML = products.map(product => `
+    <div class="admin-product">
+      <div>
+        <strong>${escapeHTML(product.name)}</strong>
+        <small>
+          $${Number(product.price_usd || 0).toFixed(2)}
+          /
+          ${Number(product.price_iqd || 0).toLocaleString()} IQD
+        </small>
+      </div>
+  container.innerHTML =
+    products.map(product => `
+
+      <div class="admin-product">
+
+        <div>
+
+          <strong>
+            ${escapeHTML(product.name)}
+          </strong>
+
+          <small>
+            $${Number(product.price_usd || 0).toFixed(2)}
+            /
+            ${Number(product.price_iqd || 0).toLocaleString()}
+            IQD
+          </small>
+
+        </div>
+
+        <div>
+
+          <button
+            onclick="editProduct('${product.id}')">
+            Edit
+          </button>
+
+          <button
+            onclick="deleteProduct('${product.id}')">
+            Delete
+          </button>
+
+        </div>
+
+      <div>
+        <button onclick="editProduct('${product.id}')">Edit</button>
+        <button onclick="deleteProduct('${product.id}')">Delete</button>
+      </div>
+    </div>
+  `).join("");
+
+    `).join("");
+}
+
+function editProduct(id) {
+  const product = products.find(p => p.id === id);
+
+  const product =
+    products.find(p => p.id === id);
+
+  if (!product) return;
+
+  editingId = id;
+
+  $("productName").value = product.name || "";
+  $("productBrand").value = product.brand || "";
+  $("productCategory").value = product.category || "";
+  $("productUSD").value = product.price_usd || "";
+  $("productIQD").value = product.price_iqd || "";
+  $("productConnection").value = product.connection || "";
+  $("productSwitch").value = product.switch_type || "";
+
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth"
+  });
+  $("productName").value =
+    product.name || "";
+
+  $("productBrand").value =
+    product.brand || "";
+
+  $("productCategory").value =
+    product.category || "other";
+
+  $("productUSD").value =
+    product.price_usd || "";
+
+  $("productIQD").value =
+    product.price_iqd || "";
+
+  $("productConnection").value =
+    product.connection || "Wired";
+
+  $("productSwitch").value =
+    product.switch_type || "";
+
+  $("saveProductBtn").textContent =
+    "UPDATE PRODUCT";
+
+  $("cancelEditBtn")
+    ?.classList.remove("hidden");
+
+  updateSwitchField();
+}
+
+function cancelEdit() {
+
+  editingId = null;
+  $("productForm")?.reset();
+
+  $("productForm").reset();
+
+  $("cancelEditBtn")
+    ?.classList.add("hidden");
+
+  $("saveProductBtn").textContent =
+    "ADD PRODUCT";
+
+  updateSwitchField();
+}
+
+async function deleteProduct(id) {
+  const product = products.find(p => p.id === id);
+
+  const product =
+    products.find(p => p.id === id);
+
+  if (!product) return;
+
+  if (!confirm(`Delete "${product.name}"?`)) return;
+  const confirmed =
+    confirm(
+      `Delete "${product.name}"?`
+    );
+
+  const { error } = await db
+    .from("products")
+    .delete()
+    .eq("id", id);
+  if (!confirmed) return;
+
+  const { error } =
+    await db
+      .from("products")
+      .delete()
+      .eq("id", id);
+
+  if (error) {
+    alert("Delete failed: " + error.message);
+
+    alert(
+      "Delete failed: " +
+      error.message
+    );
+
+    return;
+  }
+
+  await loadProducts();
+  renderAdminProducts();
+}
+
+/* =========================
+   HELPERS
+   SWITCH TYPE
+========================= */
+
 function updateSwitchField() {
+
   const category =
-    document.getElementById("productCategory");
+    $("productCategory")?.value;
 
   const field =
-    document.getElementById("switchField");
+    $("switchField");
 
-  if (!category || !field) return;
+  if (!field) return;
 
-  if (category.value === "keyboard") {
+  if (category === "keyboard") {
     field.classList.remove("hidden");
   } else {
     field.classList.add("hidden");
   }
 }
 
-async function saveProduct(event) {
-  event.preventDefault();
+/* =========================
+   IMAGE PREVIEW
+========================= */
 
-  const message =
-    document.getElementById("productMessage");
+function previewImage() {
 
-  const button =
-    document.getElementById("saveProductBtn");
-
-  const name =
-    document.getElementById("productName")?.value.trim();
-
-  const brand =
-    document.getElementById("productBrand")?.value.trim();
-
-  const category =
-    document.getElementById("productCategory")?.value;
-
-  const usd =
-    document.getElementById("productUSD")?.value;
-
-  const iqd =
-    document.getElementById("productIQD")?.value;
-
-  const connection =
-    document.getElementById("productConnection")?.value;
-
-  const switchType =
-    document.getElementById("productSwitch")?.value.trim();
-
-  const imageInput =
-    document.getElementById("productImage");
-
-  if (!name || !category || !usd || !iqd) {
-    if (message) {
-      message.textContent =
-        "Please fill in the required fields.";
-    }
-    return;
-  }
-
-  try {
-    if (button) {
-      button.disabled = true;
-      button.textContent =
-        editingProductId
-          ? "SAVING..."
-          : "ADDING...";
-    }
-
-    if (message) {
-      message.textContent = "";
-    }
-
-    let imageUrl = null;
-
-    // If editing, keep the existing image
-    // unless a new image is selected.
-    if (editingProductId) {
-      const oldProduct = products.find(
-        (p) =>
-          String(p.id) === String(editingProductId)
-      );
-
-      imageUrl = oldProduct?.image_url || null;
-    }
-
-    // Upload new image if selected.
-    if (
-      imageInput &&
-      imageInput.files &&
-      imageInput.files.length > 0
-    ) {
-      const file = imageInput.files[0];
-
-      const safeName =
-        file.name
-          .toLowerCase()
-          .replace(/[^a-z0-9.-]/g, "-");
-
-      const filePath =
-        `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2)}-${safeName}`;
-
-      const { error: uploadError } =
-        await supabaseClient.storage
-          .from("products")
-          .upload(filePath, file, {
-            cacheControl: "3600",
-            upsert: false
-          });
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data: publicData } =
-        supabaseClient.storage
-          .from("products")
-          .getPublicUrl(filePath);
-
-      imageUrl = publicData.publicUrl;
-    }
-
-    const productData = {
-      name,
-      brand,
-      category,
-      price_usd: Number(usd),
-      price_iqd: Number(iqd),
-      image_url: imageUrl,
-      connection,
-      switch_type:
-        category === "keyboard"
-          ? switchType
-          : null
-    };
-
-    let result;
-
-    if (editingProductId) {
-      result = await supabaseClient
-        .from("products")
-        .update(productData)
-        .eq("id", editingProductId);
-    } else {
-      result = await supabaseClient
-        .from("products")
-        .insert([productData]);
-    }
-
-    if (result.error) {
-      throw result.error;
-    }
-
-    if (message) {
-      message.textContent =
-        editingProductId
-          ? "Product updated successfully!"
-          : "Product added successfully!";
-      message.style.color = "var(--success)";
-    }
-
-    resetProductForm(false);
-
-    await loadProducts();
-  } catch (error) {
-    console.error("Save product error:", error);
-
-    if (message) {
-      message.textContent =
-        error.message || "Could not save product.";
-      message.style.color = "var(--danger)";
-    }
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = editingProductId
-        ? "SAVE PRODUCT"
-        : "ADD PRODUCT";
-    }
-  }
-}
-
-// ==========================================
-// ADMIN PRODUCT LIST
-// ==========================================
-
-function renderAdminProducts() {
-  const list =
-    document.getElementById("adminProductsList");
-
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  if (!products.length) {
-    list.innerHTML =
-      "<p>No products yet.</p>";
-    return;
-  }
-
-  products.forEach((product) => {
-    const item =
-      document.createElement("div");
-
-    item.className = "admin-product-item";
-
-    if (product.image_url) {
-      const img =
-        document.createElement("img");
-
-      img.src = product.image_url;
-      img.alt = product.name || "Product";
-
-      item.appendChild(img);
-    }
-
-    const info =
-      document.createElement("div");
-
-    info.className = "admin-product-info";
-
-    const title =
-      document.createElement("strong");
-
-    title.textContent =
-      product.name || "Unnamed Product";
-
-    const details =
-      document.createElement("span");
-
-    details.textContent =
-      `${product.brand || ""} • $${Number(
-        product.price_usd || 0
-      ).toFixed(2)}`;
-
-    info.appendChild(title);
-    info.appendChild(details);
-
-    const actions =
-      document.createElement("div");
-
-    actions.className =
-      "admin-product-actions";
-
-    const edit =
-      document.createElement("button");
-
-    edit.type = "button";
-    edit.textContent = "EDIT";
-
-    edit.addEventListener("click", () => {
-      editProduct(product.id);
-    });
-
-    const del =
-      document.createElement("button");
-
-    del.type = "button";
-    del.textContent = "DELETE";
-    del.className = "delete";
-
-    del.addEventListener("click", () => {
-      deleteProduct(product.id);
-    });
-
-    actions.appendChild(edit);
-    actions.appendChild(del);
-
-    item.appendChild(info);
-    item.appendChild(actions);
-
-    list.appendChild(item);
-  });
-}
-
-// ==========================================
-// EDIT PRODUCT
-// ==========================================
-
-function editProduct(productId) {
-  const product = products.find(
-    (p) => String(p.id) === String(productId)
-  );
-
-  if (!product) {
-    console.error("Product not found:", productId);
-    return;
-  }
-
-  editingProductId = product.id;
-
-  document.getElementById("productId").value =
-    product.id;
-
-  document.getElementById("productName").value =
-    product.name || "";
-
-  document.getElementById("productBrand").value =
-    product.brand || "";
-
-  document.getElementById("productCategory").value =
-    product.category || "other";
-
-  document.getElementById("productUSD").value =
-    product.price_usd || "";
-
-  document.getElementById("productIQD").value =
-    product.price_iqd || "";
-
-  document.getElementById("productConnection").value =
-    product.connection || "Wired";
-
-  document.getElementById("productSwitch").value =
-    product.switch_type || "";
-
-  updateSwitchField();
-
-  const button =
-    document.getElementById("saveProductBtn");
-
-  if (button) {
-    button.textContent = "SAVE PRODUCT";
-  }
-
-  const cancel =
-    document.getElementById("cancelEditBtn");
-
-  if (cancel) {
-    cancel.classList.remove("hidden");
-  }
-
-  const preview =
-    document.getElementById("imagePreview");
-
-  if (preview) {
-    if (product.image_url) {
-      preview.src = product.image_url;
-      preview.classList.remove("hidden");
-    } else {
-      preview.classList.add("hidden");
-    }
-  }
-
-  const message =
-    document.getElementById("productMessage");
-
-  if (message) {
-    message.textContent =
-      "Editing product...";
-    message.style.color = "var(--cyan)";
-  }
-
-  const form =
-    document.getElementById("productForm");
-
-  if (form) {
-    form.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }
-}
-
-// ==========================================
-// DELETE PRODUCT
-// ==========================================
-
-async function deleteProduct(productId) {
-  const product = products.find(
-    (p) => String(p.id) === String(productId)
-  );
-
-  if (!product) {
-    console.error("Product not found:", productId);
-    return;
-  }
-
-  const confirmed = window.confirm(
-    `Delete "${product.name}"?`
-  );
-
-  if (!confirmed) return;
-
-  try {
-    const { error } =
-      await supabaseClient
-        .from("products")
-        .delete()
-        .eq("id", productId);
-
-    if (error) {
-      throw error;
-    }
-
-    console.log(
-      "Product deleted:",
-      product.name
-    );
-
-    if (
-      editingProductId &&
-      String(editingProductId) ===
-        String(productId)
-    ) {
-      resetProductForm();
-    }
-
-    await loadProducts();
-  } catch (error) {
-    console.error("Delete product error:", error);
-
-    alert(
-      error.message ||
-        "Could not delete the product."
-    );
-  }
-}
-
-// ==========================================
-// RESET FORM
-// ==========================================
-
-function resetProductForm(clearMessage = true) {
-  editingProductId = null;
-
-  const form =
-    document.getElementById("productForm");
-
-  if (form) {
-    form.reset();
-  }
-
-  const productId =
-    document.getElementById("productId");
-
-  if (productId) {
-    productId.value = "";
-  }
-
-  const button =
-    document.getElementById("saveProductBtn");
-
-  if (button) {
-    button.textContent = "ADD PRODUCT";
-  }
-
-  const cancel =
-    document.getElementById("cancelEditBtn");
-
-  if (cancel) {
-    cancel.classList.add("hidden");
-  }
-
-  const preview =
-    document.getElementById("imagePreview");
-
-  if (preview) {
-    preview.removeAttribute("src");
-    preview.classList.add("hidden");
-  }
-
-  updateSwitchField();
-
-  if (clearMessage) {
-    const message =
-      document.getElementById("productMessage");
-
-    if (message) {
-      message.textContent = "";
-    }
-  }
-}
-
-// ==========================================
-// IMAGE PREVIEW
-// ==========================================
-
-function previewImage(event) {
   const file =
-    event.target.files?.[0];
+    $("productImage")?.files?.[0];
 
   const preview =
-    document.getElementById("imagePreview");
+    $("imagePreview");
 
-  if (!preview) return;
+  if (!file || !preview) return;
 
-  if (!file) {
-    preview.removeAttribute("src");
-    preview.classList.add("hidden");
-    return;
-  }
+  preview.src =
+    URL.createObjectURL(file);
 
-  const reader =
-    new FileReader();
-
-  reader.onload = (e) => {
-    preview.src = e.target.result;
-    preview.classList.remove("hidden");
-  };
-
-  reader.readAsDataURL(file);
+  preview.classList.remove("hidden");
 }
 
-// ==========================================
-// BUTTONS
-// ==========================================
+/* =========================
+   SECURITY / HTML
+========================= */
 
-function setupButtons() {
-  loadCart();
+function escapeHTML(value) {
 
-  const cartBtn =
-    document.getElementById("cartBtn");
-
-  const closeCartBtn =
-    document.getElementById("closeCart");
-
-  const cartOverlay =
-    document.getElementById("cartOverlay");
-
-  const whatsapp =
-    document.getElementById("whatsappOrder");
-
-  const closeDetails =
-    document.getElementById(
-      "closeProductDetails"
-    );
-
-  const detailsOverlay =
-    document.getElementById(
-      "productDetailsOverlay"
-    );
-
-  const detailsAdd =
-    document.getElementById(
-      "detailsAddCart"
-    );
-
-  if (cartBtn) {
-    cartBtn.addEventListener(
-      "click",
-      openCart
-    );
-  }
-
-  if (closeCartBtn) {
-    closeCartBtn.addEventListener(
-      "click",
-      closeCart
-    );
-  }
-
-  if (cartOverlay) {
-    cartOverlay.addEventListener(
-      "click",
-      closeCart
-    );
-  }
-
-  if (whatsapp) {
-    whatsapp.addEventListener(
-      "click",
-      sendWhatsAppOrder
-    );
-  }
-
-  if (closeDetails) {
-    closeDetails.addEventListener(
-      "click",
-      closeProductDetails
-    );
-  }
-
-  if (detailsOverlay) {
-    detailsOverlay.addEventListener(
-      "click",
-      (event) => {
-        if (
-          event.target === detailsOverlay
-        ) {
-          closeProductDetails();
-        }
-      }
-    );
-  }
-
-  if (detailsAdd) {
-    detailsAdd.addEventListener(
-      "click",
-      () => {
-        if (currentDetailsProduct) {
-          addToCart(
-            currentDetailsProduct.id
-          );
-          closeProductDetails();
-        }
-      }
-    );
-  }
-
-  renderCart();
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+@@ -584,13 +849,12 @@ function escapeHTML(value) {
+    .replace(/'/g, "&#039;");
 }
 
-// ==========================================
-// HELPERS
-// ==========================================
-
-function formatIQD(value) {
-  const number = Number(value || 0);
-
-  return number.toLocaleString("en-US");
+function escapeAttribute(value) {
+  return escapeHTML(value);
 }
+/* =========================
+   GLOBAL FUNCTIONS
+========================= */
 
-function capitalize(value) {
-  if (!value) return "";
-
-  return (
-    String(value).charAt(0).toUpperCase() +
-    String(value).slice(1)
-  );
-}
-
-// ==========================================
-// ESC KEY
-// ==========================================
-
-document.addEventListener(
-  "keydown",
-  (event) => {
-    if (event.key !== "Escape") return;
-
-    closeCart();
-    closeProductDetails();
-  }
-);
-```
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.changeQuantity = changeQuantity;
+window.checkoutWhatsApp = checkoutWhatsApp;
+window.editProduct = editProduct;
+window.deleteProduct = deleteProduct;
+  
