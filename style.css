@@ -1090,3 +1090,35 @@ body.rtl .modal-close {
   z-index: 5001;
 }
 ```
+/* ===== HEADER CLICK FIX ===== */
+
+.header {
+  position: sticky !important;
+  top: 0;
+  z-index: 99999 !important;
+  pointer-events: auto !important;
+}
+
+.header-actions,
+.nav,
+.logo {
+  position: relative;
+  z-index: 100000 !important;
+  pointer-events: auto !important;
+}
+
+.header-actions button,
+.header-actions a {
+  position: relative;
+  z-index: 100001 !important;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
+/* Hidden overlays must NEVER block clicks */
+.overlay.hidden,
+.modal.hidden,
+.product-details-overlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
