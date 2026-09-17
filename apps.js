@@ -2,58 +2,49 @@ const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
 const WHATSAPP = "9647701068935";
 
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let products = [];
 let cart = JSON.parse(localStorage.getItem("ahstore_cart") || "[]");
+let language = localStorage.getItem("ahstore_language") || "en";
 let editingId = null;
-let currentLanguage = localStorage.getItem("ahstore_language") || "en";
 
 const $ = (id) => document.getElementById(id);
 
-/* =========================
-   LANGUAGE
-========================= */
-
-function updateLanguage() {
-  document.documentElement.lang = currentLanguage;
-  document.body.classList.toggle("rtl", currentLanguage === "ku");
-
-  document.querySelectorAll("[data-en][data-ku]").forEach((el) => {
-    el.textContent = currentLanguage === "ku"
-      ? el.dataset.ku
-      : el.dataset.en;
-  });
-
-  document.querySelectorAll("[data-placeholder-en][data-placeholder-ku]").forEach((el) => {
-    el.placeholder = currentLanguage === "ku"
-      ? el.dataset.placeholderKu
-      : el.dataset.placeholderEn;
-  });
-
-  $("languageBtn").textContent =
-    currentLanguage === "en" ? "کوردی" : "English";
-
-  renderProducts();
+document.addEventListener("DOMContentLoaded", () => {
+  setupButtons();
+  applyLanguage();
   renderCart();
-}
-
-$("languageBtn").addEventListener("click", () => {
-  currentLanguage = currentLanguage === "en" ? "ku" : "en";
-  localStorage.setItem("ahstore_language", currentLanguage);
-  updateLanguage();
+  loadProducts();
+  checkAuth();
 });
 
+/* =========================
+   BUTTONS
+========================= */
+
+function setupButtons() {
+  $("adminBtn")?.addEventListener("click", openAdmin);
+  $("cartBtn")?.addEventListener("click", openCart);
+  $("closeCart")?.addEventListener("click", closeCart);
+  $("closeAdmin")?.addEventListener("click", closeAdmin);
+  $("langBtn")?.addEventListener("click", toggleLanguage);
+
+  $("searchInput")?.addEventListener("input", filterProducts);
+  $("categoryFilter")?.addEventListener("change", filterProducts);
+
+  $("loginForm")?.addEventListener("submit", loginAdmin);
+  $("logoutBtn")?.addEventListener("click", logoutAdmin);
+
+  $("productForm")?.addEventListener("submit", saveProduct);
+  $("cancelEdit")?.addEventListener("click", cancelEdit);
+}
 
 /* =========================
    PRODUCTS
 ========================= */
 
 async function loadProducts() {
-  $("productsGrid").innerHTML =
-    `<div class="loading">${currentLanguage === "ku" ? "بەرهەمەکان بار دەکرێن..." : "Loading products..."}</div>`;
-
   const { data, error } = await db
     .from("products")
     .select("*")
@@ -61,140 +52,112 @@ async function loadProducts() {
 
   if (error) {
     console.error(error);
-    $("productsGrid").innerHTML =
-      `<div class="empty-products">Unable to load products.</div>`;
+    showProductsError();
     return;
   }
 
   products = data || [];
-  renderProducts();
-  renderAdminProducts();
+  renderProducts(products);
 }
 
-function getCategoryName(category) {
-  const names = {
-    keyboard: ["Keyboards", "کیبۆرد"],
-    mouse: ["Mice", "ماوس"],
-    headset: ["Headsets", "هێدسێت"],
-    mousepad: ["Mousepads", "ماوس پاد"],
-    controller: ["Controllers", "کۆنتڕۆڵەر"],
-    monitor: ["Monitors", "مۆنیتەر"],
-    accessories: ["Accessories", "ئاکسسواری"],
-    other: ["Other", "هی تر"]
-  };
+function renderProducts(list) {
+  const container = $("productsGrid");
 
-  return names[category]
-    ? names[category][currentLanguage === "ku" ? 1 : 0]
-    : category || "";
+  if (!container) return;
+
+  if (!list.length) {
+    container.innerHTML = `
+      <div class="empty-products">
+        <h3>No products found</h3>
+        <p>Try another search or category.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(product => `
+    <div class="product-card">
+      <div class="product-image">
+        ${
+          product.image_url
+            ? `<img src="${escapeAttribute(product.image_url)}" alt="${escapeAttribute(product.name)}">`
+            : `<div class="no-image">AHSTORE</div>`
+        }
+      </div>
+
+      <div class="product-info">
+        <div class="product-brand">${escapeHTML(product.brand || "")}</div>
+        <h3>${escapeHTML(product.name)}</h3>
+
+        <div class="product-meta">
+          <span>${escapeHTML(product.category || "")}</span>
+          ${
+            product.connection
+              ? `<span>${escapeHTML(product.connection)}</span>`
+              : ""
+          }
+        </div>
+
+        ${
+          product.switch_type && product.category?.toLowerCase() === "keyboard"
+            ? `<div class="switch-type">Switch: ${escapeHTML(product.switch_type)}</div>`
+            : ""
+        }
+
+        <div class="price">
+          $${Number(product.price_usd || 0).toFixed(2)}
+          <small>${Number(product.price_iqd || 0).toLocaleString()} IQD</small>
+        </div>
+
+        <button class="add-cart" onclick="addToCart('${product.id}')">
+          ${language === "ku" ? "زیادکردن بۆ سەبەتە" : "Add to Cart"}
+        </button>
+      </div>
+    </div>
+  `).join("");
 }
 
-function renderProducts() {
-  const grid = $("productsGrid");
-  const search = $("searchInput").value.toLowerCase().trim();
-  const category = $("categoryFilter").value;
+function filterProducts() {
+  const search = ($("searchInput")?.value || "").toLowerCase();
+  const category = $("categoryFilter")?.value || "all";
 
-  const filtered = products.filter((product) => {
+  const filtered = products.filter(product => {
     const matchesSearch =
-      !search ||
-      `${product.name} ${product.brand || ""} ${product.category || ""}`
+      `${product.name} ${product.brand} ${product.category}`
         .toLowerCase()
         .includes(search);
 
     const matchesCategory =
-      category === "all" || product.category === category;
+      category === "all" ||
+      (product.category || "").toLowerCase() === category.toLowerCase();
 
     return matchesSearch && matchesCategory;
   });
 
-  if (!filtered.length) {
-    grid.innerHTML = `
-      <div class="empty-products">
-        ${currentLanguage === "ku"
-          ? "هیچ بەرهەمێک نەدۆزرایەوە."
-          : "No products found."}
-      </div>`;
-    return;
-  }
-
-  grid.innerHTML = filtered.map((product) => {
-    const image = product.image_url ||
-      "https://via.placeholder.com/600x400/07101b/00e5ff?text=AH+STORE";
-
-    const connection = product.connection
-      ? `<span class="detail-tag">📡 ${escapeHTML(product.connection)}</span>`
-      : "";
-
-    const switchType = product.switch_type
-      ? `<span class="detail-tag">⌨️ ${escapeHTML(product.switch_type)}</span>`
-      : "";
-
-    return `
-      <article class="product-card">
-        <img
-          class="product-image"
-          src="${escapeAttribute(image)}"
-          alt="${escapeAttribute(product.name)}"
-          loading="lazy"
-        >
-
-        <div class="product-info">
-          <div class="product-brand">
-            ${escapeHTML(product.brand || "AH STORE")}
-          </div>
-
-          <div class="product-name">
-            ${escapeHTML(product.name)}
-          </div>
-
-          <div class="product-details">
-            <span class="detail-tag">
-              ${escapeHTML(getCategoryName(product.category))}
-            </span>
-            ${connection}
-            ${switchType}
-          </div>
-
-          <div class="product-price">
-            <div class="price-usd">
-              $${Number(product.price_usd || 0).toFixed(2)}
-            </div>
-
-            <div class="price-iqd">
-              ${formatIQD(product.price_iqd)} IQD
-            </div>
-          </div>
-
-          <button
-            class="add-cart"
-            onclick="addToCart('${product.id}')"
-          >
-            ${currentLanguage === "ku"
-              ? "➕ زیادکردن بۆ سەبەت"
-              : "➕ ADD TO CART"}
-          </button>
-        </div>
-      </article>
-    `;
-  }).join("");
+  renderProducts(filtered);
 }
 
-$("searchInput").addEventListener("input", renderProducts);
-$("categoryFilter").addEventListener("change", renderProducts);
-
+function showProductsError() {
+  const container = $("productsGrid");
+  if (container) {
+    container.innerHTML = `
+      <div class="empty-products">
+        <h3>Unable to load products</h3>
+        <p>Please refresh the page.</p>
+      </div>
+    `;
+  }
+}
 
 /* =========================
    CART
 ========================= */
 
-function saveCart() {
-  localStorage.setItem("ahstore_cart", JSON.stringify(cart));
-}
-
 function addToCart(id) {
-  const product = products.find((p) => String(p.id) === String(id));
+  const product = products.find(p => p.id === id);
   if (!product) return;
 
-  const existing = cart.find((item) => String(item.id) === String(id));
+  const existing = cart.find(item => item.id === id);
 
   if (existing) {
     existing.quantity++;
@@ -202,9 +165,8 @@ function addToCart(id) {
     cart.push({
       id: product.id,
       name: product.name,
-      price_usd: Number(product.price_usd || 0),
-      price_iqd: Number(product.price_iqd || 0),
-      image_url: product.image_url || "",
+      price_usd: product.price_usd,
+      price_iqd: product.price_iqd,
       quantity: 1
     });
   }
@@ -215,13 +177,13 @@ function addToCart(id) {
 }
 
 function removeFromCart(id) {
-  cart = cart.filter((item) => String(item.id) !== String(id));
+  cart = cart.filter(item => item.id !== id);
   saveCart();
   renderCart();
 }
 
 function changeQuantity(id, amount) {
-  const item = cart.find((x) => String(x.id) === String(id));
+  const item = cart.find(item => item.id === id);
   if (!item) return;
 
   item.quantity += amount;
@@ -235,167 +197,203 @@ function changeQuantity(id, amount) {
   renderCart();
 }
 
-function renderCart() {
-  $("cartCount").textContent =
-    cart.reduce((total, item) => total + item.quantity, 0);
+function saveCart() {
+  localStorage.setItem("ahstore_cart", JSON.stringify(cart));
+}
 
+function renderCart() {
   const container = $("cartItems");
+  const count = $("cartCount");
+  const totalUSD = $("cartTotalUSD");
+  const totalIQD = $("cartTotalIQD");
+
+  if (!container) return;
+
+  if (count) {
+    count.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+  }
 
   if (!cart.length) {
     container.innerHTML = `
-      <div class="empty-products">
-        ${currentLanguage === "ku"
-          ? "سەبەتەکە بەتاڵە."
-          : "Your cart is empty."}
-      </div>`;
-    $("cartTotal").textContent = "$0";
+      <div class="empty-cart">
+        <h3>${language === "ku" ? "سەبەتەکە بەتاڵە" : "Your cart is empty"}</h3>
+      </div>
+    `;
+
+    if (totalUSD) totalUSD.textContent = "$0.00";
+    if (totalIQD) totalIQD.textContent = "0 IQD";
     return;
   }
 
-  let totalUSD = 0;
+  let usd = 0;
+  let iqd = 0;
 
-  container.innerHTML = cart.map((item) => {
-    totalUSD += item.price_usd * item.quantity;
+  container.innerHTML = cart.map(item => {
+    usd += Number(item.price_usd || 0) * item.quantity;
+    iqd += Number(item.price_iqd || 0) * item.quantity;
 
     return `
       <div class="cart-item">
-        <img
-          src="${escapeAttribute(item.image_url || "https://via.placeholder.com/100")}"
-          alt=""
-        >
-
-        <div class="cart-item-info">
-          <div class="cart-item-name">
-            ${escapeHTML(item.name)}
-          </div>
-
-          <div class="cart-item-price">
-            $${item.price_usd.toFixed(2)}
-          </div>
-
-          <div style="margin-top:8px;display:flex;gap:7px;align-items:center;">
-            <button class="edit-btn"
-              onclick="changeQuantity('${item.id}', -1)">−</button>
-
-            <span>${item.quantity}</span>
-
-            <button class="edit-btn"
-              onclick="changeQuantity('${item.id}', 1)">+</button>
-          </div>
+        <div>
+          <strong>${escapeHTML(item.name)}</strong>
+          <div>$${Number(item.price_usd || 0).toFixed(2)}</div>
         </div>
 
-        <button
-          class="remove-cart"
-          onclick="removeFromCart('${item.id}')"
-        >
-          ✕
+        <div class="quantity">
+          <button onclick="changeQuantity('${item.id}', -1)">−</button>
+          <span>${item.quantity}</span>
+          <button onclick="changeQuantity('${item.id}', 1)">+</button>
+        </div>
+
+        <button class="remove-cart" onclick="removeFromCart('${item.id}')">
+          ×
         </button>
       </div>
     `;
   }).join("");
 
-  $("cartTotal").textContent = `$${totalUSD.toFixed(2)}`;
+  if (totalUSD) totalUSD.textContent = `$${usd.toFixed(2)}`;
+  if (totalIQD) totalIQD.textContent = `${iqd.toLocaleString()} IQD`;
 }
 
 function openCart() {
-  $("cartOverlay").classList.remove("hidden");
-  $("cartDrawer").classList.add("open");
+  $("cartDrawer")?.classList.add("open");
+  $("overlay")?.classList.add("show");
 }
 
 function closeCart() {
-  $("cartOverlay").classList.add("hidden");
-  $("cartDrawer").classList.remove("open");
+  $("cartDrawer")?.classList.remove("open");
+  $("overlay")?.classList.remove("show");
 }
 
-$("cartBtn").addEventListener("click", openCart);
-$("closeCart").addEventListener("click", closeCart);
-$("cartOverlay").addEventListener("click", closeCart);
-
-
-/* =========================
-   WHATSAPP
-========================= */
-
-$("whatsappOrder").addEventListener("click", () => {
+function checkoutWhatsApp() {
   if (!cart.length) {
-    alert(
-      currentLanguage === "ku"
-        ? "سەرەتا بەرهەمێک زیاد بکە."
-        : "Your cart is empty."
-    );
+    alert(language === "ku" ? "سەبەتەکە بەتاڵە" : "Your cart is empty.");
     return;
   }
 
   let message =
-    currentLanguage === "ku"
-      ? "سڵاو AH STORE، دەمەوێت ئەم بەرهەمانە داوا بکەم:%0A%0A"
-      : "Hello AH STORE, I would like to order:%0A%0A";
+    language === "ku"
+      ? "سڵاو AHSTORE، دەمەوێت ئەم بەرهەمانە بکڕم:\n\n"
+      : "Hello AHSTORE, I would like to order:\n\n";
 
-  let total = 0;
-
-  cart.forEach((item, index) => {
-    const subtotal = item.price_usd * item.quantity;
-    total += subtotal;
-
-    message +=
-      `${index + 1}. ${item.name} x${item.quantity} - $${subtotal.toFixed(2)}%0A`;
+  cart.forEach(item => {
+    message += `• ${item.name} x${item.quantity}\n`;
   });
 
-  message += `%0A${currentLanguage === "ku" ? "کۆی گشتی" : "Total"}: $${total.toFixed(2)}`;
-  message += `%0A%0A${currentLanguage === "ku" ? "تکایە زانیارییەکانی گەیاندن بنێرن." : "Please send me the delivery details."}`;
+  message +=
+    language === "ku"
+      ? "\nتکایە زانیارییەکانی داواکارییەکەم بۆ بنێرە."
+      : "\nPlease send me the order details.";
 
-  window.open(`https://wa.me/${WHATSAPP}?text=${message}`, "_blank");
-});
-
+  window.open(
+    `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
+}
 
 /* =========================
-   ADMIN MODAL
+   LANGUAGE
 ========================= */
 
-$("adminBtn").addEventListener("click", openAdmin);
-$("closeAdmin").addEventListener("click", closeAdmin);
+function toggleLanguage() {
+  language = language === "en" ? "ku" : "en";
+  localStorage.setItem("ahstore_language", language);
+  applyLanguage();
+  renderProducts(products);
+  renderCart();
+}
+
+function applyLanguage() {
+  document.documentElement.dir = language === "ku" ? "rtl" : "ltr";
+  document.documentElement.lang = language === "ku" ? "ku" : "en";
+
+  const langBtn = $("langBtn");
+  if (langBtn) {
+    langBtn.textContent = language === "ku" ? "English" : "کوردی";
+  }
+
+  const translations = {
+    heroTitle: {
+      en: "LEVEL UP YOUR SETUP.",
+      ku: "سیستەمەکەت بەرزتر بکەرەوە."
+    },
+    heroText: {
+      en: "Gaming gear built for players.",
+      ku: "کەرەستەی گەیمینگ بۆ یاریزانان."
+    },
+    productsTitle: {
+      en: "OUR PRODUCTS",
+      ku: "بەرهەمەکانمان"
+    },
+    searchInput: {
+      en: "Search products...",
+      ku: "گەڕان بۆ بەرهەم..."
+    },
+    aboutTitle: {
+      en: "ABOUT AHSTORE",
+      ku: "دەربارەی AHSTORE"
+    }
+  };
+
+  Object.entries(translations).forEach(([id, text]) => {
+    const element = $(id);
+    if (!element) return;
+
+    if ("placeholder" in element) {
+      element.placeholder = text[language];
+    } else {
+      element.textContent = text[language];
+    }
+  });
+}
+
+/* =========================
+   ADMIN
+========================= */
 
 function openAdmin() {
-  $("adminModal").classList.remove("hidden");
+  $("adminModal")?.classList.add("show");
+  $("overlay")?.classList.add("show");
+  checkAuth();
 }
 
 function closeAdmin() {
-  $("adminModal").classList.add("hidden");
+  $("adminModal")?.classList.remove("show");
+  $("overlay")?.classList.remove("show");
 }
 
-
-/* =========================
-   AUTH
-========================= */
-
 async function checkAuth() {
-  const { data } = await db.auth.getSession();
+  const {
+    data: { session }
+  } = await db.auth.getSession();
 
-  if (data.session) {
+  if (session) {
     showAdminPanel();
   } else {
-    showLogin();
+    showLoginPanel();
   }
 }
 
-function showLogin() {
-  $("loginSection").classList.remove("hidden");
-  $("adminPanel").classList.add("hidden");
+function showLoginPanel() {
+  if ($("adminLogin")) $("adminLogin").style.display = "block";
+  if ($("adminPanel")) $("adminPanel").style.display = "none";
 }
 
 function showAdminPanel() {
-  $("loginSection").classList.add("hidden");
-  $("adminPanel").classList.remove("hidden");
+  if ($("adminLogin")) $("adminLogin").style.display = "none";
+  if ($("adminPanel")) $("adminPanel").style.display = "block";
+
   renderAdminProducts();
 }
 
-$("loginForm").addEventListener("submit", async (event) => {
+async function loginAdmin(event) {
   event.preventDefault();
 
-  $("loginMessage").textContent = "Signing in...";
+  const email = $("adminEmail")?.value.trim();
+  const password = $("adminPassword")?.value;
 
-  const email = $("adminEmail").value.trim();
-  const password = $("adminPassword").value;
+  if (!email || !password) return;
 
   const { error } = await db.auth.signInWithPassword({
     email,
@@ -403,249 +401,161 @@ $("loginForm").addEventListener("submit", async (event) => {
   });
 
   if (error) {
-    $("loginMessage").textContent = error.message;
+    alert("Login failed: " + error.message);
     return;
   }
 
-  $("loginMessage").textContent = "";
   showAdminPanel();
-});
+}
 
-$("logoutBtn").addEventListener("click", async () => {
+async function logoutAdmin() {
   await db.auth.signOut();
-  resetProductForm();
-  showLogin();
-});
-
+  showLoginPanel();
+}
 
 /* =========================
    ADMIN PRODUCTS
 ========================= */
 
-function renderAdminProducts() {
-  const container = $("adminProductsList");
+async function saveProduct(event) {
+  event.preventDefault();
 
-  if (!container) return;
+  const name = $("productName")?.value.trim();
+  const brand = $("productBrand")?.value.trim();
+  const category = $("productCategory")?.value;
+  const priceUSD = Number($("productUSD")?.value || 0);
+  const priceIQD = Number($("productIQD")?.value || 0);
+  const connection = $("productConnection")?.value || "";
+  const switchType = $("productSwitch")?.value || "";
+  const imageFile = $("productImage")?.files?.[0];
 
-  if (!products.length) {
-    container.innerHTML = `
-      <p style="color:#8d9bb0;">
-        No products yet.
-      </p>`;
+  if (!name || !category) {
+    alert("Please enter the product name and category.");
     return;
   }
 
-  container.innerHTML = products.map((product) => `
+  let imageUrl = editingId
+    ? products.find(p => p.id === editingId)?.image_url || ""
+    : "";
+
+  if (imageFile) {
+    const extension =
+      imageFile.name.split(".").pop()?.toLowerCase() || "jpg";
+
+    const fileName = `${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await db.storage
+      .from("products")
+      .upload(fileName, imageFile);
+
+    if (uploadError) {
+      alert("Image upload failed: " + uploadError.message);
+      return;
+    }
+
+    const { data } = db.storage
+      .from("products")
+      .getPublicUrl(fileName);
+
+    imageUrl = data.publicUrl;
+  }
+
+  const productData = {
+    name,
+    brand,
+    category,
+    price_usd: priceUSD,
+    price_iqd: priceIQD,
+    connection,
+    switch_type: category.toLowerCase() === "keyboard" ? switchType : null,
+    image_url: imageUrl
+  };
+
+  let result;
+
+  if (editingId) {
+    result = await db
+      .from("products")
+      .update(productData)
+      .eq("id", editingId);
+  } else {
+    result = await db
+      .from("products")
+      .insert(productData);
+  }
+
+  if (result.error) {
+    alert("Could not save product: " + result.error.message);
+    return;
+  }
+
+  alert(editingId ? "Product updated!" : "Product added!");
+
+  editingId = null;
+  $("productForm")?.reset();
+
+  await loadProducts();
+  renderAdminProducts();
+}
+
+function renderAdminProducts() {
+  const container = $("adminProducts");
+  if (!container) return;
+
+  if (!products.length) {
+    container.innerHTML = "<p>No products yet.</p>";
+    return;
+  }
+
+  container.innerHTML = products.map(product => `
     <div class="admin-product">
-
-      <img
-        src="${escapeAttribute(product.image_url || "https://via.placeholder.com/100")}"
-        alt=""
-      >
-
-      <div class="admin-product-info">
+      <div>
         <strong>${escapeHTML(product.name)}</strong>
         <small>
           $${Number(product.price_usd || 0).toFixed(2)}
-          • ${formatIQD(product.price_iqd)} IQD
+          /
+          ${Number(product.price_iqd || 0).toLocaleString()} IQD
         </small>
       </div>
 
-      <div class="admin-actions">
-        <button
-          class="edit-btn"
-          onclick="editProduct('${product.id}')"
-        >
-          ✏️
-        </button>
-
-        <button
-          class="delete-btn"
-          onclick="deleteProduct('${product.id}')"
-        >
-          🗑️
-        </button>
+      <div>
+        <button onclick="editProduct('${product.id}')">Edit</button>
+        <button onclick="deleteProduct('${product.id}')">Delete</button>
       </div>
-
     </div>
   `).join("");
 }
 
-
-/* =========================
-   IMAGE PREVIEW
-========================= */
-
-$("productImage").addEventListener("change", () => {
-  const file = $("productImage").files[0];
-
-  if (!file) {
-    $("imagePreview").classList.add("hidden");
-    return;
-  }
-
-  const url = URL.createObjectURL(file);
-  $("imagePreview").src = url;
-  $("imagePreview").classList.remove("hidden");
-});
-
-
-/* =========================
-   PRODUCT FORM
-========================= */
-
-$("productForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const name = $("productName").value.trim();
-  const brand = $("productBrand").value.trim();
-  const category = $("productCategory").value;
-  const priceUSD = Number($("productUSD").value);
-  const priceIQD = Number($("productIQD").value);
-  const connection = $("productConnection").value;
-  const switchType = $("productSwitch").value.trim();
-  const file = $("productImage").files[0];
-
-  $("productMessage").textContent = "Saving...";
-
-  try {
-    let imageUrl = null;
-
-    if (editingId) {
-      const oldProduct = products.find(
-        (p) => String(p.id) === String(editingId)
-      );
-
-      imageUrl = oldProduct?.image_url || null;
-    }
-
-    /* UPLOAD IMAGE */
-
-    if (file) {
-      const extension =
-        file.name.split(".").pop().toLowerCase() || "jpg";
-
-      const fileName =
-        `${crypto.randomUUID()}.${extension}`;
-
-      const path = `products/${fileName}`;
-
-      const { error: uploadError } = await db.storage
-        .from("products")
-        .upload(path, file, {
-          cacheControl: "3600",
-          upsert: false
-        });
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicData } = db.storage
-        .from("products")
-        .getPublicUrl(path);
-
-      imageUrl = publicData.publicUrl;
-    }
-
-    const payload = {
-      name,
-      brand,
-      category,
-      price_usd: priceUSD,
-      price_iqd: priceIQD,
-      connection,
-      switch_type: category === "keyboard" ? switchType : null,
-      image_url: imageUrl
-    };
-
-    /* EDIT */
-
-    if (editingId) {
-      const { error } = await db
-        .from("products")
-        .update(payload)
-        .eq("id", editingId);
-
-      if (error) throw error;
-
-      $("productMessage").textContent = "Product updated!";
-    }
-
-    /* ADD */
-
-    else {
-      const { error } = await db
-        .from("products")
-        .insert(payload);
-
-      if (error) throw error;
-
-      $("productMessage").textContent = "Product added!";
-    }
-
-    resetProductForm();
-    await loadProducts();
-
-  } catch (error) {
-    console.error(error);
-    $("productMessage").textContent =
-      error.message || "Something went wrong.";
-  }
-});
-
-
-/* =========================
-   EDIT
-========================= */
-
 function editProduct(id) {
-  const product = products.find(
-    (p) => String(p.id) === String(id)
-  );
-
+  const product = products.find(p => p.id === id);
   if (!product) return;
 
-  editingId = product.id;
+  editingId = id;
 
-  $("productId").value = product.id;
   $("productName").value = product.name || "";
   $("productBrand").value = product.brand || "";
-  $("productCategory").value = product.category || "other";
+  $("productCategory").value = product.category || "";
   $("productUSD").value = product.price_usd || "";
   $("productIQD").value = product.price_iqd || "";
-  $("productConnection").value = product.connection || "Wired";
+  $("productConnection").value = product.connection || "";
   $("productSwitch").value = product.switch_type || "";
 
-  $("saveProductBtn").textContent = "UPDATE PRODUCT";
-  $("cancelEditBtn").classList.remove("hidden");
-
-  if (product.image_url) {
-    $("imagePreview").src = product.image_url;
-    $("imagePreview").classList.remove("hidden");
-  }
-
-  updateSwitchField();
-  $("productForm").scrollIntoView({ behavior: "smooth" });
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth"
+  });
 }
 
-
-/* =========================
-   DELETE
-========================= */
+function cancelEdit() {
+  editingId = null;
+  $("productForm")?.reset();
+}
 
 async function deleteProduct(id) {
-  const product = products.find(
-    (p) => String(p.id) === String(id)
-  );
-
+  const product = products.find(p => p.id === id);
   if (!product) return;
 
-  const confirmed = confirm(
-    `Delete "${product.name}"?`
-  );
-
-  if (!confirmed) return;
-
-  $("productMessage").textContent = "Deleting...";
+  if (!confirm(`Delete "${product.name}"?`)) return;
 
   const { error } = await db
     .from("products")
@@ -653,92 +563,34 @@ async function deleteProduct(id) {
     .eq("id", id);
 
   if (error) {
-    $("productMessage").textContent = error.message;
+    alert("Delete failed: " + error.message);
     return;
   }
 
   await loadProducts();
-
-  $("productMessage").textContent = "Product deleted.";
+  renderAdminProducts();
 }
-
-
-/* =========================
-   RESET FORM
-========================= */
-
-$("cancelEditBtn").addEventListener("click", resetProductForm);
-
-function resetProductForm() {
-  editingId = null;
-
-  $("productForm").reset();
-  $("productId").value = "";
-
-  $("saveProductBtn").textContent = "ADD PRODUCT";
-  $("cancelEditBtn").classList.add("hidden");
-
-  $("imagePreview").src = "";
-  $("imagePreview").classList.add("hidden");
-
-  updateSwitchField();
-}
-
-
-/* =========================
-   SWITCH TYPE
-========================= */
-
-$("productCategory").addEventListener("change", updateSwitchField);
-
-function updateSwitchField() {
-  const keyboard =
-    $("productCategory").value === "keyboard";
-
-  $("switchField").classList.toggle("hidden", !keyboard);
-
-  if (!keyboard) {
-    $("productSwitch").value = "";
-  }
-}
-
 
 /* =========================
    HELPERS
 ========================= */
 
-function formatIQD(value) {
-  return Number(value || 0).toLocaleString("en-US");
-}
-
 function escapeHTML(value) {
   return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function escapeAttribute(value) {
   return escapeHTML(value);
 }
 
-
-/* =========================
-   START
-========================= */
-
-updateSwitchField();
-updateLanguage();
-renderCart();
-checkAuth();
-loadProducts();
-
-db.auth.onAuthStateChange((_event, session) => {
-  if (session) {
-    showAdminPanel();
-  } else {
-    showLogin();
-  }
-});
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+window.changeQuantity = changeQuantity;
+window.checkoutWhatsApp = checkoutWhatsApp;
+window.editProduct = editProduct;
+window.deleteProduct = deleteProduct;
