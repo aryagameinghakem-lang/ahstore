@@ -2,7 +2,10 @@ const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
 const WHATSAPP = "9647701068935";
 
-const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 let products = [];
 let cart = JSON.parse(localStorage.getItem("ahstore_cart") || "[]");
@@ -11,6 +14,10 @@ let editingId = null;
 
 const $ = (id) => document.getElementById(id);
 
+function sameId(a, b) {
+  return String(a) === String(b);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupButtons();
   applyLanguage();
@@ -18,6 +25,10 @@ document.addEventListener("DOMContentLoaded", () => {
   loadProducts();
   checkAuth();
 });
+
+/* =========================
+   BUTTONS
+========================= */
 
 function setupButtons() {
   $("languageBtn")?.addEventListener("click", toggleLanguage);
@@ -40,11 +51,25 @@ function setupButtons() {
   $("productForm")?.addEventListener("submit", saveProduct);
   $("cancelEditBtn")?.addEventListener("click", cancelEdit);
 
-  $("productCategory")?.addEventListener("change", updateSwitchField);
-  $("productImage")?.addEventListener("change", previewImage);
+  $("productCategory")?.addEventListener(
+    "change",
+    updateSwitchField
+  );
 
-  $("productDetailsOverlay")?.addEventListener("click", closeProductDetails);
-  $("closeProductDetails")?.addEventListener("click", closeProductDetails);
+  $("productImage")?.addEventListener(
+    "change",
+    previewImage
+  );
+
+  $("productDetailsOverlay")?.addEventListener(
+    "click",
+    closeProductDetails
+  );
+
+  $("closeProductDetails")?.addEventListener(
+    "click",
+    closeProductDetails
+  );
 }
 
 /* =========================
@@ -55,22 +80,35 @@ async function loadProducts() {
   const { data, error } = await db
     .from("products")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false
+    });
 
   if (error) {
     console.error("Products error:", error);
-    $("productsGrid").innerHTML = `
-      <div class="loading">
-        Unable to load products.
-      </div>
-    `;
+
+    if ($("productsGrid")) {
+      $("productsGrid").innerHTML = `
+        <div class="loading">
+          Unable to load products.
+        </div>
+      `;
+    }
+
     return;
   }
 
   products = data || [];
+
+  console.log("Products loaded:", products);
+
   renderProducts(products);
   renderAdminProducts();
 }
+
+/* =========================
+   PRODUCT CARDS
+========================= */
 
 function renderProducts(list) {
   const container = $("productsGrid");
@@ -80,97 +118,147 @@ function renderProducts(list) {
   if (!list.length) {
     container.innerHTML = `
       <div class="loading">
-        ${language === "ku" ? "هیچ بەرهەمێک نەدۆزرایەوە" : "No products found."}
+        ${
+          language === "ku"
+            ? "هیچ بەرهەمێک نەدۆزرایەوە"
+            : "No products found."
+        }
       </div>
     `;
+
     return;
   }
 
-  container.innerHTML = list.map(product => `
-    <div class="product-card" onclick="openProductDetails('${product.id}')">
+  container.innerHTML = list
+    .map((product) => {
+      const id = String(product.id);
 
-      <div class="product-image">
-        ${
-          product.image_url
-            ? `<img src="${escapeHTML(product.image_url)}" alt="${escapeHTML(product.name)}">`
-            : `<div class="no-image">AH STORE</div>`
-        }
-      </div>
-
-      <div class="product-info">
-
-        <div class="product-brand">
-          ${escapeHTML(product.brand || "")}
-        </div>
-
-        <h3 class="product-name">
-          ${escapeHTML(product.name)}
-        </h3>
-
-        <div class="product-details">
-
-          <span class="detail-tag">
-            ${escapeHTML(product.category || "")}
-          </span>
+      return `
+        <div
+          class="product-card"
+          onclick="openProductDetails(${JSON.stringify(id)})"
+        >
 
           ${
-            product.connection
-              ? `<span class="detail-tag">
-                  ${escapeHTML(product.connection)}
-                 </span>`
-              : ""
+            product.image_url
+              ? `
+                <img
+                  class="product-image"
+                  src="${escapeHTML(product.image_url)}"
+                  alt="${escapeHTML(product.name)}"
+                >
+              `
+              : `
+                <div class="product-image no-image">
+                  AH STORE
+                </div>
+              `
           }
 
-          ${
-            product.switch_type &&
-            product.category?.toLowerCase() === "keyboard"
-              ? `<span class="detail-tag">
-                  ${escapeHTML(product.switch_type)} Switch
-                 </span>`
-              : ""
-          }
+          <div class="product-info">
 
-        </div>
+            <div class="product-brand">
+              ${escapeHTML(product.brand || "")}
+            </div>
 
-        <div class="product-price">
+            <h3 class="product-name">
+              ${escapeHTML(product.name || "")}
+            </h3>
 
-          <div class="price-usd">
-            $${Number(product.price_usd || 0).toFixed(2)}
+            <div class="product-details">
+
+              <span class="detail-tag">
+                ${escapeHTML(product.category || "")}
+              </span>
+
+              ${
+                product.connection
+                  ? `
+                    <span class="detail-tag">
+                      ${escapeHTML(product.connection)}
+                    </span>
+                  `
+                  : ""
+              }
+
+              ${
+                product.switch_type &&
+                String(product.category).toLowerCase() ===
+                  "keyboard"
+                  ? `
+                    <span class="detail-tag">
+                      ${escapeHTML(product.switch_type)}
+                      Switch
+                    </span>
+                  `
+                  : ""
+              }
+
+            </div>
+
+            <div class="product-price">
+
+              <div class="price-usd">
+                $${Number(
+                  product.price_usd || 0
+                ).toFixed(2)}
+              </div>
+
+              <div class="price-iqd">
+                ${Number(
+                  product.price_iqd || 0
+                ).toLocaleString()} IQD
+              </div>
+
+            </div>
+
+            <button
+              class="add-cart"
+              onclick="
+                event.stopPropagation();
+                addToCart(${JSON.stringify(id)});
+              "
+            >
+              ${
+                language === "ku"
+                  ? "➕ زیادکردن بۆ سەبەت"
+                  : "🛒 Add to Cart"
+              }
+            </button>
+
           </div>
-
-          <div class="price-iqd">
-            ${Number(product.price_iqd || 0).toLocaleString()} IQD
-          </div>
-
         </div>
-
-        <button
-          class="add-cart"
-          onclick="event.stopPropagation(); addToCart('${product.id}')">
-          ${language === "ku" ? "➕ زیادکردن بۆ سەبەت" : "🛒 Add to Cart"}
-        </button>
-
-      </div>
-    </div>
-  `).join("");
+      `;
+    })
+    .join("");
 }
 
-function filterProducts() {
-  const search = ($("searchInput")?.value || "").toLowerCase();
-  const category = $("categoryFilter")?.value || "all";
+/* =========================
+   SEARCH / FILTER
+========================= */
 
-  const filtered = products.filter(product => {
+function filterProducts() {
+  const search = (
+    $("searchInput")?.value || ""
+  ).toLowerCase();
+
+  const category =
+    $("categoryFilter")?.value || "all";
+
+  const filtered = products.filter((product) => {
     const text = `
       ${product.name || ""}
       ${product.brand || ""}
       ${product.category || ""}
     `.toLowerCase();
 
-    const searchMatch = text.includes(search);
+    const searchMatch =
+      text.includes(search);
 
     const categoryMatch =
       category === "all" ||
-      (product.category || "").toLowerCase() === category.toLowerCase();
+      String(product.category || "").toLowerCase() ===
+        category.toLowerCase();
 
     return searchMatch && categoryMatch;
   });
@@ -183,63 +271,124 @@ function filterProducts() {
 ========================= */
 
 function openProductDetails(id) {
-  const product = products.find(p => p.id === id);
+  const product = products.find((p) =>
+    sameId(p.id, id)
+  );
 
-  if (!product) return;
+  if (!product) {
+    console.error(
+      "Product not found for details:",
+      id,
+      products
+    );
+
+    return;
+  }
 
   const modal = $("productDetailsModal");
   const overlay = $("productDetailsOverlay");
 
-  if (!modal || !overlay) return;
+  if (!modal || !overlay) {
+    console.error(
+      "Product details HTML is missing."
+    );
 
-  $("detailsImage").src = product.image_url || "";
-  $("detailsImage").classList.toggle("hidden", !product.image_url);
+    return;
+  }
 
-  $("detailsNoImage").classList.toggle("hidden", !!product.image_url);
+  const image = $("detailsImage");
+  const noImage = $("detailsNoImage");
 
-  $("detailsBrand").textContent = product.brand || "";
+  if (image) {
+    image.src = product.image_url || "";
+    image.classList.toggle(
+      "hidden",
+      !product.image_url
+    );
+  }
 
-  $("detailsName").textContent = product.name || "";
+  if (noImage) {
+    noImage.classList.toggle(
+      "hidden",
+      !!product.image_url
+    );
+  }
 
-  $("detailsCategory").textContent =
-    product.category || "";
+  if ($("detailsBrand")) {
+    $("detailsBrand").textContent =
+      product.brand || "";
+  }
 
-  $("detailsConnection").textContent =
-    product.connection || "";
+  if ($("detailsName")) {
+    $("detailsName").textContent =
+      product.name || "";
+  }
 
-  $("detailsUSD").textContent =
-    `$${Number(product.price_usd || 0).toFixed(2)}`;
+  if ($("detailsCategory")) {
+    $("detailsCategory").textContent =
+      product.category || "";
+  }
 
-  $("detailsIQD").textContent =
-    `${Number(product.price_iqd || 0).toLocaleString()} IQD`;
+  if ($("detailsConnection")) {
+    $("detailsConnection").textContent =
+      product.connection || "";
+  }
 
-  const switchRow = $("detailsSwitchRow");
+  if ($("detailsUSD")) {
+    $("detailsUSD").textContent =
+      `$${Number(
+        product.price_usd || 0
+      ).toFixed(2)}`;
+  }
+
+  if ($("detailsIQD")) {
+    $("detailsIQD").textContent =
+      `${Number(
+        product.price_iqd || 0
+      ).toLocaleString()} IQD`;
+  }
+
+  const switchRow =
+    $("detailsSwitchRow");
 
   if (
-    product.category?.toLowerCase() === "keyboard" &&
+    switchRow &&
+    String(product.category).toLowerCase() ===
+      "keyboard" &&
     product.switch_type
   ) {
     switchRow.classList.remove("hidden");
 
-    $("detailsSwitch").textContent =
-      product.switch_type;
-  } else {
+    if ($("detailsSwitch")) {
+      $("detailsSwitch").textContent =
+        product.switch_type;
+    }
+  } else if (switchRow) {
     switchRow.classList.add("hidden");
   }
 
-  $("detailsAddCart").onclick = () => {
-    addToCart(product.id);
-    closeProductDetails();
-  };
+  if ($("detailsAddCart")) {
+    $("detailsAddCart").onclick = () => {
+      addToCart(product.id);
+      closeProductDetails();
+    };
+  }
 
   modal.classList.remove("hidden");
   overlay.classList.remove("hidden");
+
   document.body.style.overflow = "hidden";
 }
 
 function closeProductDetails() {
-  $("productDetailsModal")?.classList.add("hidden");
-  $("productDetailsOverlay")?.classList.add("hidden");
+  $("productDetailsModal")?.classList.add(
+    "hidden"
+  );
+
+  $("productDetailsOverlay")?.classList.add(
+    "hidden"
+  );
+
   document.body.style.overflow = "";
 }
 
@@ -248,24 +397,44 @@ function closeProductDetails() {
 ========================= */
 
 function addToCart(id) {
-  const product = products.find(p => p.id === id);
+  const product = products.find((p) =>
+    sameId(p.id, id)
+  );
 
   if (!product) {
-    console.error("Product not found:", id);
+    console.error(
+      "Product not found:",
+      id,
+      products
+    );
+
+    alert(
+      language === "ku"
+        ? "بەرهەمەکە نەدۆزرایەوە."
+        : "Product could not be found."
+    );
+
     return;
   }
 
-  const existing = cart.find(item => item.id === id);
+  const existing = cart.find((item) =>
+    sameId(item.id, id)
+  );
 
   if (existing) {
     existing.quantity += 1;
   } else {
     cart.push({
-      id: product.id,
-      name: product.name,
-      price_usd: Number(product.price_usd || 0),
-      price_iqd: Number(product.price_iqd || 0),
-      image_url: product.image_url || "",
+      id: String(product.id),
+      name: product.name || "",
+      price_usd: Number(
+        product.price_usd || 0
+      ),
+      price_iqd: Number(
+        product.price_iqd || 0
+      ),
+      image_url:
+        product.image_url || "",
       quantity: 1
     });
   }
@@ -276,14 +445,18 @@ function addToCart(id) {
 }
 
 function removeFromCart(id) {
-  cart = cart.filter(item => item.id !== id);
+  cart = cart.filter(
+    (item) => !sameId(item.id, id)
+  );
 
   saveCart();
   renderCart();
 }
 
 function changeQuantity(id, amount) {
-  const item = cart.find(item => item.id === id);
+  const item = cart.find((item) =>
+    sameId(item.id, id)
+  );
 
   if (!item) return;
 
@@ -313,7 +486,8 @@ function renderCart() {
   if (!container) return;
 
   const totalItems = cart.reduce(
-    (sum, item) => sum + item.quantity,
+    (sum, item) =>
+      sum + Number(item.quantity || 0),
     0
   );
 
@@ -341,70 +515,119 @@ function renderCart() {
 
   let totalUSD = 0;
 
-  container.innerHTML = cart.map(item => {
+  container.innerHTML = cart
+    .map((item) => {
+      const price =
+        Number(item.price_usd || 0);
 
-    totalUSD +=
-      Number(item.price_usd || 0) *
-      item.quantity;
+      const quantity =
+        Number(item.quantity || 0);
 
-    return `
-      <div class="cart-item">
+      totalUSD += price * quantity;
 
-        ${
-          item.image_url
-            ? `<img src="${escapeHTML(item.image_url)}" alt="">`
-            : ""
-        }
+      return `
+        <div class="cart-item">
 
-        <div class="cart-item-info">
+          ${
+            item.image_url
+              ? `
+                <img
+                  src="${escapeHTML(
+                    item.image_url
+                  )}"
+                  alt=""
+                >
+              `
+              : ""
+          }
 
-          <div class="cart-item-name">
-            ${escapeHTML(item.name)}
+          <div class="cart-item-info">
+
+            <div class="cart-item-name">
+              ${escapeHTML(
+                item.name
+              )}
+            </div>
+
+            <div class="cart-item-price">
+              $${price.toFixed(2)}
+            </div>
+
+            <div class="quantity">
+
+              <button
+                onclick="
+                  changeQuantity(
+                    ${JSON.stringify(
+                      String(item.id)
+                    )},
+                    -1
+                  )
+                "
+              >
+                −
+              </button>
+
+              <span>
+                ${quantity}
+              </span>
+
+              <button
+                onclick="
+                  changeQuantity(
+                    ${JSON.stringify(
+                      String(item.id)
+                    )},
+                    1
+                  )
+                "
+              >
+                +
+              </button>
+
+            </div>
+
           </div>
 
-          <div class="cart-item-price">
-            $${Number(item.price_usd || 0).toFixed(2)}
-          </div>
-
-          <div class="quantity">
-
-            <button onclick="changeQuantity('${item.id}', -1)">
-              −
-            </button>
-
-            <span>${item.quantity}</span>
-
-            <button onclick="changeQuantity('${item.id}', 1)">
-              +
-            </button>
-
-          </div>
+          <button
+            class="remove-cart"
+            onclick="
+              removeFromCart(
+                ${JSON.stringify(
+                  String(item.id)
+                )}
+              )
+            "
+          >
+            ✕
+          </button>
 
         </div>
-
-        <button
-          class="remove-cart"
-          onclick="removeFromCart('${item.id}')">
-          ✕
-        </button>
-
-      </div>
-    `;
-  }).join("");
+      `;
+    })
+    .join("");
 
   if (total) {
-    total.textContent = `$${totalUSD.toFixed(2)}`;
+    total.textContent =
+      `$${totalUSD.toFixed(2)}`;
   }
 }
 
 function openCart() {
   $("cartDrawer")?.classList.add("open");
-  $("cartOverlay")?.classList.remove("hidden");
+  $("cartOverlay")?.classList.remove(
+    "hidden"
+  );
 }
 
 function closeCart() {
-  $("cartDrawer")?.classList.remove("open");
-  $("cartOverlay")?.classList.add("hidden");
+  $("cartDrawer")?.classList.remove(
+    "open"
+  );
+
+  $("cartOverlay")?.classList.add(
+    "hidden"
+  );
 }
 
 /* =========================
@@ -418,6 +641,7 @@ function checkoutWhatsApp() {
         ? "سەبەتەکە بەتاڵە."
         : "Your cart is empty."
     );
+
     return;
   }
 
@@ -428,13 +652,19 @@ function checkoutWhatsApp() {
 
   let totalUSD = 0;
 
-  cart.forEach(item => {
-    totalUSD +=
-      Number(item.price_usd || 0) *
-      item.quantity;
+  cart.forEach((item) => {
+    const price =
+      Number(item.price_usd || 0);
+
+    const quantity =
+      Number(item.quantity || 0);
+
+    totalUSD += price * quantity;
 
     message +=
-      `• ${item.name} x${item.quantity} - $${Number(item.price_usd || 0).toFixed(2)}\n`;
+      `• ${item.name} x${quantity} - $${price.toFixed(
+        2
+      )}\n`;
   });
 
   message +=
@@ -468,38 +698,38 @@ function toggleLanguage() {
   );
 
   applyLanguage();
-
   filterProducts();
   renderCart();
 }
 
 function applyLanguage() {
-
   document.documentElement.lang =
-    language === "ku" ? "ku" : "en";
+    language === "ku"
+      ? "ku"
+      : "en";
 
   document.documentElement.dir =
-    language === "ku" ? "rtl" : "ltr";
+    language === "ku"
+      ? "rtl"
+      : "ltr";
 
   document.body.classList.toggle(
     "rtl",
     language === "ku"
   );
 
-  const elements =
-    document.querySelectorAll("[data-en]");
+  document
+    .querySelectorAll("[data-en]")
+    .forEach((element) => {
+      const text =
+        language === "ku"
+          ? element.dataset.ku
+          : element.dataset.en;
 
-  elements.forEach(element => {
-
-    const text =
-      language === "ku"
-        ? element.dataset.ku
-        : element.dataset.en;
-
-    if (text) {
-      element.textContent = text;
-    }
-  });
+      if (text) {
+        element.textContent = text;
+      }
+    });
 
   const input = $("searchInput");
 
@@ -510,11 +740,11 @@ function applyLanguage() {
         : input.dataset.placeholderEn;
   }
 
-  const languageButton =
+  const button =
     $("languageBtn");
 
-  if (languageButton) {
-    languageButton.textContent =
+  if (button) {
+    button.textContent =
       language === "ku"
         ? "English"
         : "کوردی";
@@ -526,16 +756,20 @@ function applyLanguage() {
 ========================= */
 
 function openAdmin() {
-  $("adminModal")?.classList.remove("hidden");
+  $("adminModal")?.classList.remove(
+    "hidden"
+  );
+
   checkAuth();
 }
 
 function closeAdmin() {
-  $("adminModal")?.classList.add("hidden");
+  $("adminModal")?.classList.add(
+    "hidden"
+  );
 }
 
 async function checkAuth() {
-
   const {
     data: { session }
   } = await db.auth.getSession();
@@ -548,13 +782,24 @@ async function checkAuth() {
 }
 
 function showLoginPanel() {
-  $("loginSection")?.classList.remove("hidden");
-  $("adminPanel")?.classList.add("hidden");
+  $("loginSection")?.classList.remove(
+    "hidden"
+  );
+
+  $("adminPanel")?.classList.add(
+    "hidden"
+  );
 }
 
 function showAdminPanel() {
-  $("loginSection")?.classList.add("hidden");
-  $("adminPanel")?.classList.remove("hidden");
+  $("loginSection")?.classList.add(
+    "hidden"
+  );
+
+  $("adminPanel")?.classList.remove(
+    "hidden"
+  );
+
   renderAdminProducts();
 }
 
@@ -579,8 +824,10 @@ async function loginAdmin(event) {
   if (error) {
     if (message) {
       message.textContent =
-        "Login failed: " + error.message;
+        "Login failed: " +
+        error.message;
     }
+
     return;
   }
 
@@ -593,11 +840,12 @@ async function loginAdmin(event) {
 
 async function logoutAdmin() {
   await db.auth.signOut();
+
   showLoginPanel();
 }
 
 /* =========================
-   ADD / EDIT PRODUCTS
+   ADD / EDIT PRODUCT
 ========================= */
 
 async function saveProduct(event) {
@@ -613,10 +861,14 @@ async function saveProduct(event) {
     $("productCategory").value;
 
   const priceUSD =
-    Number($("productUSD").value || 0);
+    Number(
+      $("productUSD").value || 0
+    );
 
   const priceIQD =
-    Number($("productIQD").value || 0);
+    Number(
+      $("productIQD").value || 0
+    );
 
   const connection =
     $("productConnection").value;
@@ -629,16 +881,19 @@ async function saveProduct(event) {
 
   let imageUrl = "";
 
-  if (editingId) {
+  if (editingId !== null) {
     const oldProduct =
-      products.find(p => p.id === editingId);
+      products.find((p) =>
+        sameId(p.id, editingId)
+      );
 
     imageUrl =
       oldProduct?.image_url || "";
   }
 
-  if (imageFile) {
+  /* IMAGE UPLOAD */
 
+  if (imageFile) {
     const extension =
       imageFile.name
         .split(".")
@@ -651,20 +906,26 @@ async function saveProduct(event) {
     const { error } =
       await db.storage
         .from("products")
-        .upload(fileName, imageFile);
+        .upload(
+          fileName,
+          imageFile
+        );
 
     if (error) {
       alert(
         "Image upload failed: " +
         error.message
       );
+
       return;
     }
 
     const { data } =
       db.storage
         .from("products")
-        .getPublicUrl(fileName);
+        .getPublicUrl(
+          fileName
+        );
 
     imageUrl =
       data.publicUrl;
@@ -686,7 +947,7 @@ async function saveProduct(event) {
 
   let result;
 
-  if (editingId) {
+  if (editingId !== null) {
     result =
       await db
         .from("products")
@@ -704,11 +965,12 @@ async function saveProduct(event) {
       "Could not save product: " +
       result.error.message
     );
+
     return;
   }
 
   alert(
-    editingId
+    editingId !== null
       ? "Product updated!"
       : "Product added!"
   );
@@ -717,13 +979,18 @@ async function saveProduct(event) {
 
   $("productForm").reset();
 
-  $("cancelEditBtn")
-    ?.classList.add("hidden");
+  $("cancelEditBtn")?.classList.add(
+    "hidden"
+  );
 
   $("saveProductBtn").textContent =
     "ADD PRODUCT";
 
-  $("imagePreview")?.classList.add("hidden");
+  $("imagePreview")?.classList.add(
+    "hidden"
+  );
+
+  updateSwitchField();
 
   await loadProducts();
 }
@@ -733,7 +1000,6 @@ async function saveProduct(event) {
 ========================= */
 
 function renderAdminProducts() {
-
   const container =
     $("adminProductsList");
 
@@ -742,64 +1008,105 @@ function renderAdminProducts() {
   if (!products.length) {
     container.innerHTML =
       "<p>No products yet.</p>";
+
     return;
   }
 
   container.innerHTML =
-    products.map(product => `
+    products
+      .map((product) => {
+        const id =
+          String(product.id);
 
-      <div class="admin-product">
+        return `
+          <div class="admin-product">
 
-        ${
-          product.image_url
-            ? `<img src="${escapeHTML(product.image_url)}" alt="">`
-            : ""
-        }
+            ${
+              product.image_url
+                ? `
+                  <img
+                    src="${escapeHTML(
+                      product.image_url
+                    )}"
+                    alt=""
+                  >
+                `
+                : ""
+            }
 
-        <div class="admin-product-info">
+            <div class="admin-product-info">
 
-          <strong>
-            ${escapeHTML(product.name)}
-          </strong>
+              <strong>
+                ${escapeHTML(
+                  product.name || ""
+                )}
+              </strong>
 
-          <small>
-            $${Number(product.price_usd || 0).toFixed(2)}
-            /
-            ${Number(product.price_iqd || 0).toLocaleString()}
-            IQD
-          </small>
+              <small>
+                $${Number(
+                  product.price_usd || 0
+                ).toFixed(2)}
+                /
+                ${Number(
+                  product.price_iqd || 0
+                ).toLocaleString()}
+                IQD
+              </small>
 
-        </div>
+            </div>
 
-        <div class="admin-actions">
+            <div class="admin-actions">
 
-          <button
-            class="edit-btn"
-            onclick="editProduct('${product.id}')">
-            ✏️ Edit
-          </button>
+              <button
+                class="edit-btn"
+                onclick="
+                  editProduct(
+                    ${JSON.stringify(id)}
+                  )
+                "
+              >
+                ✏️ Edit
+              </button>
 
-          <button
-            class="delete-btn"
-            onclick="deleteProduct('${product.id}')">
-            🗑️ Delete
-          </button>
+              <button
+                class="delete-btn"
+                onclick="
+                  deleteProduct(
+                    ${JSON.stringify(id)}
+                  )
+                "
+              >
+                🗑️ Delete
+              </button>
 
-        </div>
+            </div>
 
-      </div>
-
-    `).join("");
+          </div>
+        `;
+      })
+      .join("");
 }
 
+/* =========================
+   EDIT
+========================= */
+
 function editProduct(id) {
-
   const product =
-    products.find(p => p.id === id);
+    products.find((p) =>
+      sameId(p.id, id)
+    );
 
-  if (!product) return;
+  if (!product) {
+    console.error(
+      "Product not found for edit:",
+      id
+    );
 
-  editingId = id;
+    return;
+  }
+
+  editingId = product.id;
 
   $("productName").value =
     product.name || "";
@@ -825,8 +1132,9 @@ function editProduct(id) {
   $("saveProductBtn").textContent =
     "UPDATE PRODUCT";
 
-  $("cancelEditBtn")
-    ?.classList.remove("hidden");
+  $("cancelEditBtn")?.classList.remove(
+    "hidden"
+  );
 
   updateSwitchField();
 
@@ -835,29 +1143,47 @@ function editProduct(id) {
   });
 }
 
-function cancelEdit() {
+/* =========================
+   CANCEL EDIT
+========================= */
 
+function cancelEdit() {
   editingId = null;
 
   $("productForm").reset();
 
-  $("cancelEditBtn")
-    ?.classList.add("hidden");
+  $("cancelEditBtn")?.classList.add(
+    "hidden"
+  );
 
   $("saveProductBtn").textContent =
     "ADD PRODUCT";
 
-  $("imagePreview")?.classList.add("hidden");
+  $("imagePreview")?.classList.add(
+    "hidden"
+  );
 
   updateSwitchField();
 }
 
+/* =========================
+   DELETE
+========================= */
+
 async function deleteProduct(id) {
-
   const product =
-    products.find(p => p.id === id);
+    products.find((p) =>
+      sameId(p.id, id)
+    );
 
-  if (!product) return;
+  if (!product) {
+    console.error(
+      "Product not found for delete:",
+      id
+    );
+
+    return;
+  }
 
   const confirmed =
     confirm(
@@ -870,13 +1196,14 @@ async function deleteProduct(id) {
     await db
       .from("products")
       .delete()
-      .eq("id", id);
+      .eq("id", product.id);
 
   if (error) {
     alert(
       "Delete failed: " +
       error.message
     );
+
     return;
   }
 
@@ -884,11 +1211,10 @@ async function deleteProduct(id) {
 }
 
 /* =========================
-   SWITCH
+   SWITCH FIELD
 ========================= */
 
 function updateSwitchField() {
-
   const category =
     $("productCategory")?.value;
 
@@ -908,7 +1234,6 @@ function updateSwitchField() {
 ========================= */
 
 function previewImage() {
-
   const file =
     $("productImage")?.files?.[0];
 
@@ -920,7 +1245,9 @@ function previewImage() {
   preview.src =
     URL.createObjectURL(file);
 
-  preview.classList.remove("hidden");
+  preview.classList.remove(
+    "hidden"
+  );
 }
 
 /* =========================
@@ -929,21 +1256,49 @@ function previewImage() {
 
 function escapeHTML(value) {
   return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 }
 
 /* =========================
    GLOBAL FUNCTIONS
 ========================= */
 
-window.addToCart = addToCart;
-window.removeFromCart = removeFromCart;
-window.changeQuantity = changeQuantity;
-window.editProduct = editProduct;
-window.deleteProduct = deleteProduct;
-window.openProductDetails = openProductDetails;
-window.closeProductDetails = closeProductDetails;
+window.addToCart =
+  addToCart;
+
+window.removeFromCart =
+  removeFromCart;
+
+window.changeQuantity =
+  changeQuantity;
+
+window.editProduct =
+  editProduct;
+
+window.deleteProduct =
+  deleteProduct;
+
+window.openProductDetails =
+  openProductDetails;
+
+window.closeProductDetails =
+  closeProductDetails;
