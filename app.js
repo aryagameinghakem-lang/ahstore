@@ -19,10 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuth();
 });
 
-/* =========================
-   BUTTONS
-========================= */
-
 function setupButtons() {
   $("languageBtn")?.addEventListener("click", toggleLanguage);
 
@@ -46,6 +42,9 @@ function setupButtons() {
 
   $("productCategory")?.addEventListener("change", updateSwitchField);
   $("productImage")?.addEventListener("change", previewImage);
+
+  $("productDetailsOverlay")?.addEventListener("click", closeProductDetails);
+  $("closeProductDetails")?.addEventListener("click", closeProductDetails);
 }
 
 /* =========================
@@ -61,7 +60,9 @@ async function loadProducts() {
   if (error) {
     console.error("Products error:", error);
     $("productsGrid").innerHTML = `
-      <div class="loading">Unable to load products.</div>
+      <div class="loading">
+        Unable to load products.
+      </div>
     `;
     return;
   }
@@ -79,20 +80,20 @@ function renderProducts(list) {
   if (!list.length) {
     container.innerHTML = `
       <div class="loading">
-        No products found.
+        ${language === "ku" ? "هیچ بەرهەمێک نەدۆزرایەوە" : "No products found."}
       </div>
     `;
     return;
   }
 
   container.innerHTML = list.map(product => `
-    <div class="product-card">
+    <div class="product-card" onclick="openProductDetails('${product.id}')">
 
       <div class="product-image">
         ${
           product.image_url
             ? `<img src="${escapeHTML(product.image_url)}" alt="${escapeHTML(product.name)}">`
-            : `<div class="no-image">AHSTORE</div>`
+            : `<div class="no-image">AH STORE</div>`
         }
       </div>
 
@@ -102,35 +103,51 @@ function renderProducts(list) {
           ${escapeHTML(product.brand || "")}
         </div>
 
-        <h3>${escapeHTML(product.name)}</h3>
+        <h3 class="product-name">
+          ${escapeHTML(product.name)}
+        </h3>
 
-        <div class="product-meta">
-          <span>${escapeHTML(product.category || "")}</span>
+        <div class="product-details">
+
+          <span class="detail-tag">
+            ${escapeHTML(product.category || "")}
+          </span>
+
           ${
             product.connection
-              ? `<span>${escapeHTML(product.connection)}</span>`
+              ? `<span class="detail-tag">
+                  ${escapeHTML(product.connection)}
+                 </span>`
               : ""
           }
+
+          ${
+            product.switch_type &&
+            product.category?.toLowerCase() === "keyboard"
+              ? `<span class="detail-tag">
+                  ${escapeHTML(product.switch_type)} Switch
+                 </span>`
+              : ""
+          }
+
         </div>
 
-        ${
-          product.switch_type &&
-          product.category?.toLowerCase() === "keyboard"
-            ? `<div class="switch-type">
-                Switch: ${escapeHTML(product.switch_type)}
-               </div>`
-            : ""
-        }
+        <div class="product-price">
 
-        <div class="price">
-          $${Number(product.price_usd || 0).toFixed(2)}
-          <small>
+          <div class="price-usd">
+            $${Number(product.price_usd || 0).toFixed(2)}
+          </div>
+
+          <div class="price-iqd">
             ${Number(product.price_iqd || 0).toLocaleString()} IQD
-          </small>
+          </div>
+
         </div>
 
-        <button class="add-cart" onclick="addToCart('${product.id}')">
-          ${language === "ku" ? "زیادکردن بۆ سەبەت" : "Add to Cart"}
+        <button
+          class="add-cart"
+          onclick="event.stopPropagation(); addToCart('${product.id}')">
+          ${language === "ku" ? "➕ زیادکردن بۆ سەبەت" : "🛒 Add to Cart"}
         </button>
 
       </div>
@@ -162,24 +179,93 @@ function filterProducts() {
 }
 
 /* =========================
+   PRODUCT DETAILS
+========================= */
+
+function openProductDetails(id) {
+  const product = products.find(p => p.id === id);
+
+  if (!product) return;
+
+  const modal = $("productDetailsModal");
+  const overlay = $("productDetailsOverlay");
+
+  if (!modal || !overlay) return;
+
+  $("detailsImage").src = product.image_url || "";
+  $("detailsImage").classList.toggle("hidden", !product.image_url);
+
+  $("detailsNoImage").classList.toggle("hidden", !!product.image_url);
+
+  $("detailsBrand").textContent = product.brand || "";
+
+  $("detailsName").textContent = product.name || "";
+
+  $("detailsCategory").textContent =
+    product.category || "";
+
+  $("detailsConnection").textContent =
+    product.connection || "";
+
+  $("detailsUSD").textContent =
+    `$${Number(product.price_usd || 0).toFixed(2)}`;
+
+  $("detailsIQD").textContent =
+    `${Number(product.price_iqd || 0).toLocaleString()} IQD`;
+
+  const switchRow = $("detailsSwitchRow");
+
+  if (
+    product.category?.toLowerCase() === "keyboard" &&
+    product.switch_type
+  ) {
+    switchRow.classList.remove("hidden");
+
+    $("detailsSwitch").textContent =
+      product.switch_type;
+  } else {
+    switchRow.classList.add("hidden");
+  }
+
+  $("detailsAddCart").onclick = () => {
+    addToCart(product.id);
+    closeProductDetails();
+  };
+
+  modal.classList.remove("hidden");
+  overlay.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+
+function closeProductDetails() {
+  $("productDetailsModal")?.classList.add("hidden");
+  $("productDetailsOverlay")?.classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+/* =========================
    CART
 ========================= */
 
 function addToCart(id) {
   const product = products.find(p => p.id === id);
 
-  if (!product) return;
+  if (!product) {
+    console.error("Product not found:", id);
+    return;
+  }
 
   const existing = cart.find(item => item.id === id);
 
   if (existing) {
-    existing.quantity++;
+    existing.quantity += 1;
   } else {
     cart.push({
       id: product.id,
       name: product.name,
-      price_usd: product.price_usd,
-      price_iqd: product.price_iqd,
+      price_usd: Number(product.price_usd || 0),
+      price_iqd: Number(product.price_iqd || 0),
+      image_url: product.image_url || "",
       quantity: 1
     });
   }
@@ -238,9 +324,11 @@ function renderCart() {
   if (!cart.length) {
     container.innerHTML = `
       <div class="loading">
-        ${language === "ku"
-          ? "سەبەتەکە بەتاڵە"
-          : "Your cart is empty"}
+        ${
+          language === "ku"
+            ? "سەبەتەکە بەتاڵە"
+            : "Your cart is empty"
+        }
       </div>
     `;
 
@@ -262,31 +350,42 @@ function renderCart() {
     return `
       <div class="cart-item">
 
-        <div>
-          <strong>${escapeHTML(item.name)}</strong>
-          <div>
+        ${
+          item.image_url
+            ? `<img src="${escapeHTML(item.image_url)}" alt="">`
+            : ""
+        }
+
+        <div class="cart-item-info">
+
+          <div class="cart-item-name">
+            ${escapeHTML(item.name)}
+          </div>
+
+          <div class="cart-item-price">
             $${Number(item.price_usd || 0).toFixed(2)}
           </div>
-        </div>
 
-        <div class="quantity">
+          <div class="quantity">
 
-          <button onclick="changeQuantity('${item.id}', -1)">
-            −
-          </button>
+            <button onclick="changeQuantity('${item.id}', -1)">
+              −
+            </button>
 
-          <span>${item.quantity}</span>
+            <span>${item.quantity}</span>
 
-          <button onclick="changeQuantity('${item.id}', 1)">
-            +
-          </button>
+            <button onclick="changeQuantity('${item.id}', 1)">
+              +
+            </button>
+
+          </div>
 
         </div>
 
         <button
           class="remove-cart"
           onclick="removeFromCart('${item.id}')">
-          ×
+          ✕
         </button>
 
       </div>
@@ -327,15 +426,24 @@ function checkoutWhatsApp() {
       ? "سڵاو AH STORE، دەمەوێت ئەم بەرهەمانە داوا بکەم:\n\n"
       : "Hello AH STORE, I would like to order:\n\n";
 
+  let totalUSD = 0;
+
   cart.forEach(item => {
+    totalUSD +=
+      Number(item.price_usd || 0) *
+      item.quantity;
+
     message +=
-      `• ${item.name} x${item.quantity}\n`;
+      `• ${item.name} x${item.quantity} - $${Number(item.price_usd || 0).toFixed(2)}\n`;
   });
 
   message +=
+    `\nTotal: $${totalUSD.toFixed(2)}\n`;
+
+  message +=
     language === "ku"
-      ? "\nتکایە زانیارییەکانی داواکارییەکەم بۆ بنێرە."
-      : "\nPlease send me the order details.";
+      ? "\nپارەدان لە کاتی وەرگرتن."
+      : "\nCash on delivery.";
 
   const url =
     `https://wa.me/${WHATSAPP}?text=` +
@@ -360,7 +468,8 @@ function toggleLanguage() {
   );
 
   applyLanguage();
-  renderProducts(products);
+
+  filterProducts();
   renderCart();
 }
 
@@ -371,6 +480,11 @@ function applyLanguage() {
 
   document.documentElement.dir =
     language === "ku" ? "rtl" : "ltr";
+
+  document.body.classList.toggle(
+    "rtl",
+    language === "ku"
+  );
 
   const elements =
     document.querySelectorAll("[data-en]");
@@ -387,8 +501,7 @@ function applyLanguage() {
     }
   });
 
-  const input =
-    $("searchInput");
+  const input = $("searchInput");
 
   if (input) {
     input.placeholder =
@@ -414,7 +527,6 @@ function applyLanguage() {
 
 function openAdmin() {
   $("adminModal")?.classList.remove("hidden");
-
   checkAuth();
 }
 
@@ -436,23 +548,17 @@ async function checkAuth() {
 }
 
 function showLoginPanel() {
-
   $("loginSection")?.classList.remove("hidden");
-
   $("adminPanel")?.classList.add("hidden");
 }
 
 function showAdminPanel() {
-
   $("loginSection")?.classList.add("hidden");
-
   $("adminPanel")?.classList.remove("hidden");
-
   renderAdminProducts();
 }
 
 async function loginAdmin(event) {
-
   event.preventDefault();
 
   const email =
@@ -464,8 +570,6 @@ async function loginAdmin(event) {
   const message =
     $("loginMessage");
 
-  if (!email || !password) return;
-
   const { error } =
     await db.auth.signInWithPassword({
       email,
@@ -473,12 +577,10 @@ async function loginAdmin(event) {
     });
 
   if (error) {
-
     if (message) {
       message.textContent =
         "Login failed: " + error.message;
     }
-
     return;
   }
 
@@ -490,9 +592,7 @@ async function loginAdmin(event) {
 }
 
 async function logoutAdmin() {
-
   await db.auth.signOut();
-
   showLoginPanel();
 }
 
@@ -501,7 +601,6 @@ async function logoutAdmin() {
 ========================= */
 
 async function saveProduct(event) {
-
   event.preventDefault();
 
   const name =
@@ -531,15 +630,12 @@ async function saveProduct(event) {
   let imageUrl = "";
 
   if (editingId) {
-
     const oldProduct =
       products.find(p => p.id === editingId);
 
     imageUrl =
       oldProduct?.image_url || "";
   }
-
-  /* IMAGE UPLOAD */
 
   if (imageFile) {
 
@@ -555,18 +651,13 @@ async function saveProduct(event) {
     const { error } =
       await db.storage
         .from("products")
-        .upload(
-          fileName,
-          imageFile
-        );
+        .upload(fileName, imageFile);
 
     if (error) {
-
       alert(
         "Image upload failed: " +
         error.message
       );
-
       return;
     }
 
@@ -580,40 +671,28 @@ async function saveProduct(event) {
   }
 
   const productData = {
-
     name,
     brand,
     category,
-
-    price_usd:
-      priceUSD,
-
-    price_iqd:
-      priceIQD,
-
+    price_usd: priceUSD,
+    price_iqd: priceIQD,
     connection,
-
     switch_type:
       category === "keyboard"
         ? switchType
         : null,
-
-    image_url:
-      imageUrl
+    image_url: imageUrl
   };
 
   let result;
 
   if (editingId) {
-
     result =
       await db
         .from("products")
         .update(productData)
         .eq("id", editingId);
-
   } else {
-
     result =
       await db
         .from("products")
@@ -621,12 +700,10 @@ async function saveProduct(event) {
   }
 
   if (result.error) {
-
     alert(
       "Could not save product: " +
       result.error.message
     );
-
     return;
   }
 
@@ -646,6 +723,8 @@ async function saveProduct(event) {
   $("saveProductBtn").textContent =
     "ADD PRODUCT";
 
+  $("imagePreview")?.classList.add("hidden");
+
   await loadProducts();
 }
 
@@ -661,10 +740,8 @@ function renderAdminProducts() {
   if (!container) return;
 
   if (!products.length) {
-
     container.innerHTML =
       "<p>No products yet.</p>";
-
     return;
   }
 
@@ -673,7 +750,13 @@ function renderAdminProducts() {
 
       <div class="admin-product">
 
-        <div>
+        ${
+          product.image_url
+            ? `<img src="${escapeHTML(product.image_url)}" alt="">`
+            : ""
+        }
+
+        <div class="admin-product-info">
 
           <strong>
             ${escapeHTML(product.name)}
@@ -688,16 +771,18 @@ function renderAdminProducts() {
 
         </div>
 
-        <div>
+        <div class="admin-actions">
 
           <button
+            class="edit-btn"
             onclick="editProduct('${product.id}')">
-            Edit
+            ✏️ Edit
           </button>
 
           <button
+            class="delete-btn"
             onclick="deleteProduct('${product.id}')">
-            Delete
+            🗑️ Delete
           </button>
 
         </div>
@@ -744,6 +829,10 @@ function editProduct(id) {
     ?.classList.remove("hidden");
 
   updateSwitchField();
+
+  $("productForm")?.scrollIntoView({
+    behavior: "smooth"
+  });
 }
 
 function cancelEdit() {
@@ -757,6 +846,8 @@ function cancelEdit() {
 
   $("saveProductBtn").textContent =
     "ADD PRODUCT";
+
+  $("imagePreview")?.classList.add("hidden");
 
   updateSwitchField();
 }
@@ -782,12 +873,10 @@ async function deleteProduct(id) {
       .eq("id", id);
 
   if (error) {
-
     alert(
       "Delete failed: " +
       error.message
     );
-
     return;
   }
 
@@ -795,7 +884,7 @@ async function deleteProduct(id) {
 }
 
 /* =========================
-   SWITCH TYPE
+   SWITCH
 ========================= */
 
 function updateSwitchField() {
@@ -808,11 +897,10 @@ function updateSwitchField() {
 
   if (!field) return;
 
-  if (category === "keyboard") {
-    field.classList.remove("hidden");
-  } else {
-    field.classList.add("hidden");
-  }
+  field.classList.toggle(
+    "hidden",
+    category !== "keyboard"
+  );
 }
 
 /* =========================
@@ -836,11 +924,10 @@ function previewImage() {
 }
 
 /* =========================
-   SECURITY / HTML
+   SECURITY
 ========================= */
 
 function escapeHTML(value) {
-
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -858,3 +945,5 @@ window.removeFromCart = removeFromCart;
 window.changeQuantity = changeQuantity;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
+window.openProductDetails = openProductDetails;
+window.closeProductDetails = closeProductDetails;
