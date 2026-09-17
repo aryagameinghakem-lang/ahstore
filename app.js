@@ -1,2201 +1,1708 @@
-```javascript
-// =====================================================
-// AH STORE - BRAND NEW APP.JS
-// =====================================================
-
 const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
-const WHATSAPP_NUMBER = "9647701068935";
+const WHATSAPP = "9647701068935";
 
 const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
+SUPABASE_URL,
+SUPABASE_KEY
 );
 
-// =====================================================
-// STATE
-// =====================================================
-
 let products = [];
-let cart = [];
+let cart = JSON.parse(localStorage.getItem("ahstore_cart") || "[]");
 let language = localStorage.getItem("ahstore_language") || "en";
-let selectedProduct = null;
 let editingId = null;
+let selectedProductId = null;
 
-// Load saved cart safely
-try {
-  cart = JSON.parse(
-    localStorage.getItem("ahstore_cart") || "[]"
-  );
+const $ = (id) => document.getElementById(id);
 
-  if (!Array.isArray(cart)) {
-    cart = [];
-  }
-} catch {
-  cart = [];
-}
+/* =========================
+START
+========================= */
 
-// =====================================================
-// START
-// =====================================================
+document.addEventListener("DOMContentLoaded", () => {
+setupButtons();
+applyLanguage();
+updateSwitchField();
+renderCart();
+closeCart();
+closeProductDetails();
+loadProducts();
+checkAuth();
+});
 
-document.addEventListener("DOMContentLoaded", startApp);
-
-async function startApp() {
-  console.log("AH STORE starting...");
-
-  setupButtons();
-  setLanguage();
-  closeCart();
-  closeProductModal();
-  closeAdmin();
-
-  updateCart();
-
-  await loadProducts();
-  await checkLogin();
-
-  console.log("AH STORE ready.");
-}
-
-// =====================================================
-// BUTTONS / EVENTS
-// =====================================================
+/* =========================
+BUTTONS
+========================= */
 
 function setupButtons() {
-  const languageButton = document.getElementById("languageBtn");
-  const cartButton = document.getElementById("cartBtn");
-  const closeCartButton = document.getElementById("closeCart");
-  const cartOverlay = document.getElementById("cartOverlay");
+$("languageBtn")?.addEventListener("click", toggleLanguage);
 
-  const whatsappButton =
-    document.getElementById("whatsappOrder");
+$("cartBtn")?.addEventListener("click", openCart);
+$("closeCart")?.addEventListener("click", closeCart);
+$("cartOverlay")?.addEventListener("click", closeCart);
 
-  const adminButton = document.getElementById("adminBtn");
-  const closeAdminButton = document.getElementById("closeAdmin");
+$("adminBtn")?.addEventListener("click", openAdmin);
+$("closeAdmin")?.addEventListener("click", closeAdmin);
 
-  const loginForm = document.getElementById("loginForm");
-  const logoutButton = document.getElementById("logoutBtn");
+$("whatsappOrder")?.addEventListener(
+"click",
+checkoutWhatsApp
+);
 
-  const searchInput = document.getElementById("searchInput");
-  const categoryFilter =
-    document.getElementById("categoryFilter");
+$("searchInput")?.addEventListener(
+"input",
+filterProducts
+);
 
-  const closeDetailsButton =
-    document.getElementById("closeProductDetails");
+$("categoryFilter")?.addEventListener(
+"change",
+filterProducts
+);
 
-  const detailsOverlay =
-    document.getElementById("productDetailsOverlay");
+$("loginForm")?.addEventListener(
+"submit",
+loginAdmin
+);
 
-  const detailsAddButton =
-    document.getElementById("detailsAddCart");
+$("logoutBtn")?.addEventListener(
+"click",
+logoutAdmin
+);
 
-  const productForm =
-    document.getElementById("productForm");
+$("productForm")?.addEventListener(
+"submit",
+saveProduct
+);
 
-  const cancelEditButton =
-    document.getElementById("cancelEditBtn");
+$("cancelEditBtn")?.addEventListener(
+"click",
+cancelEdit
+);
 
-  // Language
-  if (languageButton) {
-    languageButton.addEventListener("click", function (event) {
-      event.preventDefault();
-      event.stopPropagation();
+$("productCategory")?.addEventListener(
+"change",
+updateSwitchField
+);
 
-      language = language === "en" ? "ku" : "en";
+$("productImage")?.addEventListener(
+"change",
+previewImage
+);
 
-      localStorage.setItem(
-        "ahstore_language",
-        language
-      );
+$("closeProductDetails")?.addEventListener(
+"click",
+closeProductDetails
+);
 
-      setLanguage();
-      renderProducts();
-      updateCart();
-    });
-  }
+$("productDetailsOverlay")?.addEventListener(
+"click",
+(event) => {
+if (
+event.target === $("productDetailsOverlay")
+) {
+closeProductDetails();
+}
+}
+);
 
-  // Cart
-  if (cartButton) {
-    cartButton.addEventListener("click", function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      openCart();
-    });
-  }
-
-  if (closeCartButton) {
-    closeCartButton.addEventListener(
-      "click",
-      closeCart
-    );
-  }
-
-  if (cartOverlay) {
-    cartOverlay.addEventListener(
-      "click",
-      closeCart
-    );
-  }
-
-  // WhatsApp
-  if (whatsappButton) {
-    whatsappButton.addEventListener(
-      "click",
-      sendOrder
-    );
-  }
-
-  // Admin
-  if (adminButton) {
-    adminButton.addEventListener("click", function (event) {
-      event.preventDefault();
-      event.stopPropagation();
-
-      openAdmin();
-    });
-  }
-
-  if (closeAdminButton) {
-    closeAdminButton.addEventListener(
-      "click",
-      closeAdmin
-    );
-  }
-
-  if (loginForm) {
-    loginForm.addEventListener(
-      "submit",
-      login
-    );
-  }
-
-  if (logoutButton) {
-    logoutButton.addEventListener(
-      "click",
-      logout
-    );
-  }
-
-  // Search
-  if (searchInput) {
-    searchInput.addEventListener(
-      "input",
-      renderProducts
-    );
-  }
-
-  // Category
-  if (categoryFilter) {
-    categoryFilter.addEventListener(
-      "change",
-      renderProducts
-    );
-  }
-
-  // Product details
-  if (closeDetailsButton) {
-    closeDetailsButton.addEventListener(
-      "click",
-      closeProductModal
-    );
-  }
-
-  if (detailsOverlay) {
-    detailsOverlay.addEventListener(
-      "click",
-      function (event) {
-        if (event.target === detailsOverlay) {
-          closeProductModal();
-        }
-      }
-    );
-  }
-
-  if (detailsAddButton) {
-    detailsAddButton.addEventListener(
-      "click",
-      function () {
-        if (!selectedProduct) return;
-
-        addToCart(selectedProduct.id);
-        closeProductModal();
-      }
-    );
-  }
-
-  // Product manager
-  if (productForm) {
-    productForm.addEventListener(
-      "submit",
-      saveProduct
-    );
-  }
-
-  if (cancelEditButton) {
-    cancelEditButton.addEventListener(
-      "click",
-      cancelEdit
-    );
-  }
-
-  // Image/category changes
-  document.addEventListener(
-    "change",
-    handleChange
-  );
-
-  // Escape key
-  document.addEventListener(
-    "keydown",
-    function (event) {
-      if (event.key === "Escape") {
-        closeCart();
-        closeProductModal();
-        closeAdmin();
-      }
-    }
-  );
+$("detailsAddCart")?.addEventListener(
+"click",
+() => {
+if (selectedProductId !== null) {
+addToCart(selectedProductId);
+closeProductDetails();
+}
+}
+);
 }
 
-// =====================================================
-// LANGUAGE
-// =====================================================
-
-function setLanguage() {
-  document.documentElement.lang =
-    language === "ku" ? "ku" : "en";
-
-  document.documentElement.dir =
-    language === "ku" ? "rtl" : "ltr";
-
-  document.querySelectorAll("[data-en]").forEach(
-    function (element) {
-      const text =
-        language === "ku"
-          ? element.getAttribute("data-ku")
-          : element.getAttribute("data-en");
-
-      if (text !== null) {
-        element.textContent = text;
-      }
-    }
-  );
-
-  document
-    .querySelectorAll("[data-placeholder-en]")
-    .forEach(function (element) {
-      const placeholder =
-        language === "ku"
-          ? element.getAttribute(
-              "data-placeholder-ku"
-            )
-          : element.getAttribute(
-              "data-placeholder-en"
-            );
-
-      if (placeholder !== null) {
-        element.placeholder = placeholder;
-      }
-    });
-
-  const languageButton =
-    document.getElementById("languageBtn");
-
-  if (languageButton) {
-    languageButton.textContent =
-      language === "en"
-        ? "کوردی"
-        : "English";
-  }
-}
-
-// =====================================================
-// PRODUCTS
-// =====================================================
+/* =========================
+PRODUCTS
+========================= */
 
 async function loadProducts() {
-  const grid =
-    document.getElementById("productsGrid");
+const container = $("productsGrid");
 
-  if (grid) {
-    grid.innerHTML =
-      '<div class="loading">Loading products...</div>';
-  }
-
-  const result = await db
-    .from("products")
-    .select("*")
-    .order("created_at", {
-      ascending: false
-    });
-
-  if (result.error) {
-    console.error(
-      "SUPABASE PRODUCTS ERROR:",
-      result.error
-    );
-
-    if (grid) {
-      grid.innerHTML =
-        '<div class="loading">Unable to load products.</div>';
-    }
-
-    return;
-  }
-
-  products = result.data || [];
-
-  console.log(
-    "Products loaded:",
-    products
-  );
-
-  renderProducts();
-  renderAdminProducts();
+if (container) {
+container.innerHTML =
+`<div class="loading">Loading products...</div>`;
 }
 
-function renderProducts() {
-  const grid =
-    document.getElementById("productsGrid");
-
-  if (!grid) return;
-
-  const searchInput =
-    document.getElementById("searchInput");
-
-  const categoryFilter =
-    document.getElementById("categoryFilter");
-
-  const search =
-    searchInput
-      ? searchInput.value
-          .trim()
-          .toLowerCase()
-      : "";
-
-  const category =
-    categoryFilter
-      ? categoryFilter.value
-      : "all";
-
-  const filteredProducts =
-    products.filter(function (product) {
-      const name =
-        String(product.name || "")
-          .toLowerCase();
-
-      const brand =
-        String(product.brand || "")
-          .toLowerCase();
-
-      const productCategory =
-        String(product.category || "")
-          .toLowerCase();
-
-      const matchesSearch =
-        !search ||
-        name.includes(search) ||
-        brand.includes(search);
-
-      const matchesCategory =
-        category === "all" ||
-        productCategory ===
-          category.toLowerCase();
-
-      return (
-        matchesSearch &&
-        matchesCategory
-      );
-    });
-
-  grid.innerHTML = "";
-
-  if (!filteredProducts.length) {
-    grid.innerHTML =
-      '<div class="loading">No products found.</div>';
-
-    return;
-  }
-
-  filteredProducts.forEach(
-    function (product) {
-      const card =
-        document.createElement("div");
-
-      card.className =
-        "product-card";
-
-      // -------------------------
-      // IMAGE
-      // -------------------------
-
-      const imageArea =
-        document.createElement("div");
-
-      imageArea.className =
-        "product-image";
-
-      if (product.image_url) {
-        const image =
-          document.createElement("img");
-
-        image.src =
-          product.image_url;
-
-        image.alt =
-          product.name || "Product";
-
-        image.loading = "lazy";
-
-        imageArea.appendChild(image);
-      } else {
-        const noImage =
-          document.createElement("div");
-
-        noImage.className =
-          "no-image";
-
-        noImage.textContent =
-          "NO IMAGE";
-
-        imageArea.appendChild(
-          noImage
-        );
-      }
-
-      // -------------------------
-      // CONTENT
-      // -------------------------
-
-      const content =
-        document.createElement("div");
-
-      content.className =
-        "product-content";
-
-      const brand =
-        document.createElement("div");
-
-      brand.className =
-        "product-brand";
-
-      brand.textContent =
-        product.brand || "AH STORE";
-
-      const name =
-        document.createElement("h3");
-
-      name.textContent =
-        product.name || "Product";
-
-      // -------------------------
-      // DETAILS
-      // -------------------------
-
-      const details =
-        document.createElement("div");
-
-      details.className =
-        "product-details";
-
-      if (product.connection) {
-        const connection =
-          document.createElement("span");
-
-        connection.textContent =
-          product.connection;
-
-        details.appendChild(
-          connection
-        );
-      }
-
-      if (
-        String(product.category || "")
-          .toLowerCase() ===
-          "keyboard" &&
-        product.switch_type
-      ) {
-        const switchType =
-          document.createElement("span");
-
-        switchType.textContent =
-          product.switch_type +
-          " Switch";
-
-        details.appendChild(
-          switchType
-        );
-      }
-
-      // -------------------------
-      // PRICE
-      // -------------------------
-
-      const price =
-        document.createElement("div");
-
-      price.className =
-        "product-price";
-
-      const usd =
-        document.createElement("div");
-
-      usd.className =
-        "price-usd";
-
-      usd.textContent =
-        "$" +
-        Number(
-          product.price_usd || 0
-        ).toFixed(2);
-
-      const iqd =
-        document.createElement("div");
-
-      iqd.className =
-        "price-iqd";
-
-      iqd.textContent =
-        Number(
-          product.price_iqd || 0
-        ).toLocaleString() +
-        " IQD";
-
-      price.appendChild(usd);
-      price.appendChild(iqd);
-
-      // -------------------------
-      // BUTTONS
-      // -------------------------
-
-      const buttons =
-        document.createElement("div");
-
-      buttons.className =
-        "product-buttons";
-
-      const addButton =
-        document.createElement("button");
-
-      addButton.type = "button";
-      addButton.className =
-        "add-cart";
-
-      addButton.textContent =
-        language === "ku"
-          ? "زیادکردن بۆ سەبەت"
-          : "ADD TO CART";
-
-      addButton.addEventListener(
-        "click",
-        function (event) {
-          event.preventDefault();
-          event.stopPropagation();
-
-          addToCart(product.id);
-        }
-      );
-
-      const detailsButton =
-        document.createElement("button");
-
-      detailsButton.type = "button";
-      detailsButton.className =
-        "details-btn";
-
-      detailsButton.textContent =
-        language === "ku"
-          ? "وردەکاری"
-          : "DETAILS";
-
-      detailsButton.addEventListener(
-        "click",
-        function (event) {
-          event.preventDefault();
-          event.stopPropagation();
-
-          openProductModal(
-            product.id
-          );
-        }
-      );
-
-      buttons.appendChild(
-        addButton
-      );
-
-      buttons.appendChild(
-        detailsButton
-      );
-
-      // -------------------------
-      // BUILD CARD
-      // -------------------------
-
-      content.appendChild(brand);
-      content.appendChild(name);
-      content.appendChild(details);
-      content.appendChild(price);
-      content.appendChild(buttons);
-
-      card.appendChild(imageArea);
-      card.appendChild(content);
-
-      card.addEventListener(
-        "click",
-        function () {
-          openProductModal(
-            product.id
-          );
-        }
-      );
-
-      grid.appendChild(card);
-    }
-  );
+const { data, error } = await db
+.from("products")
+.select("*")
+.order("created_at", {
+ascending: false
+});
+
+if (error) {
+console.error("Products error:", error);
+
+```
+if (container) {
+  container.innerHTML =
+    `<div class="loading">
+      Unable to load products.
+    </div>`;
 }
 
-// =====================================================
-// CART
-// =====================================================
+return;
+```
 
-function openCart() {
-  const drawer =
-    document.getElementById(
-      "cartDrawer"
-    );
-
-  const overlay =
-    document.getElementById(
-      "cartOverlay"
-    );
-
-  if (drawer) {
-    drawer.classList.remove(
-      "hidden"
-    );
-
-    drawer.classList.add(
-      "open"
-    );
-  }
-
-  if (overlay) {
-    overlay.classList.remove(
-      "hidden"
-    );
-
-    overlay.classList.add(
-      "open"
-    );
-  }
-
-  updateCart();
 }
 
-function closeCart() {
-  const drawer =
-    document.getElementById(
-      "cartDrawer"
-    );
+products = data || [];
 
-  const overlay =
-    document.getElementById(
-      "cartOverlay"
-    );
+console.log(
+"Products loaded:",
+products
+);
 
-  if (drawer) {
-    drawer.classList.remove(
-      "open"
-    );
-
-    drawer.classList.add(
-      "hidden"
-    );
-  }
-
-  if (overlay) {
-    overlay.classList.remove(
-      "open"
-    );
-
-    overlay.classList.add(
-      "hidden"
-    );
-  }
+renderProducts(products);
+renderAdminProducts();
 }
 
-function addToCart(id) {
-  const product =
-    products.find(function (item) {
-      return String(item.id) ===
-        String(id);
-    });
+/* =========================
+PRODUCT DISPLAY
+========================= */
 
-  if (!product) {
-    console.error(
-      "Could not find product:",
-      id
-    );
+function renderProducts(list) {
+const container = $("productsGrid");
 
-    return;
-  }
+if (!container) return;
 
-  const existing =
-    cart.find(function (item) {
-      return String(item.id) ===
-        String(product.id);
-    });
+if (!list || !list.length) {
+container.innerHTML =
+`<div class="loading">
+        ${
+          language === "ku"
+            ? "هیچ بەرهەمێک نەدۆزرایەوە."
+            : "No products found."
+        }       </div>`;
 
-  if (existing) {
-    existing.quantity =
-      Number(existing.quantity || 0) +
-      1;
-  } else {
-    cart.push({
-      id: product.id,
-      name: product.name,
-      brand: product.brand,
-      price_usd:
-        Number(
-          product.price_usd || 0
-        ),
-      price_iqd:
-        Number(
-          product.price_iqd || 0
-        ),
-      image_url:
-        product.image_url || "",
-      quantity: 1
-    });
-  }
+```
+return;
+```
 
-  saveCart();
-  updateCart();
 }
 
-function removeFromCart(id) {
-  cart =
-    cart.filter(function (item) {
-      return String(item.id) !==
-        String(id);
-    });
+container.innerHTML = "";
 
-  saveCart();
-  updateCart();
-}
+list.forEach((product) => {
+const card = document.createElement("div");
 
-function changeQuantity(
-  id,
-  amount
-) {
-  const item =
-    cart.find(function (cartItem) {
-      return String(cartItem.id) ===
-        String(id);
-    });
+```
+card.className = "product-card";
 
-  if (!item) return;
+const imageArea =
+  document.createElement("div");
 
-  item.quantity =
-    Number(item.quantity || 0) +
-    amount;
+imageArea.className = "product-image";
 
-  if (item.quantity <= 0) {
-    removeFromCart(id);
-    return;
-  }
+if (product.image_url) {
+  const img =
+    document.createElement("img");
 
-  saveCart();
-  updateCart();
-}
+  img.src = product.image_url;
+  img.alt = product.name || "Product";
 
-function saveCart() {
-  localStorage.setItem(
-    "ahstore_cart",
-    JSON.stringify(cart)
-  );
-}
-
-function updateCart() {
-  const items =
-    document.getElementById(
-      "cartItems"
-    );
-
-  const count =
-    document.getElementById(
-      "cartCount"
-    );
-
-  const total =
-    document.getElementById(
-      "cartTotal"
-    );
-
-  const itemCount =
-    cart.reduce(function (
-      sum,
-      item
-    ) {
-      return (
-        sum +
-        Number(
-          item.quantity || 0
-        )
-      );
-    }, 0);
-
-  if (count) {
-    count.textContent =
-      itemCount;
-  }
-
-  if (!items || !total) {
-    return;
-  }
-
-  items.innerHTML = "";
-
-  if (!cart.length) {
-    items.innerHTML =
-      '<div class="empty-cart">Your cart is empty.</div>';
-
-    total.textContent =
-      "$0";
-
-    return;
-  }
-
-  let totalUSD = 0;
-
-  cart.forEach(function (item) {
-    const quantity =
-      Number(
-        item.quantity || 0
-      );
-
-    const price =
-      Number(
-        item.price_usd || 0
-      );
-
-    totalUSD +=
-      price * quantity;
-
-    const row =
-      document.createElement(
-        "div"
-      );
-
-    row.className =
-      "cart-item";
-
-    // Image
-    const imageBox =
-      document.createElement(
-        "div"
-      );
-
-    imageBox.className =
-      "cart-item-image";
-
-    if (item.image_url) {
-      const image =
-        document.createElement(
-          "img"
-        );
-
-      image.src =
-        item.image_url;
-
-      image.alt =
-        item.name || "Product";
-
-      imageBox.appendChild(
-        image
-      );
-    }
-
-    // Info
-    const info =
-      document.createElement(
-        "div"
-      );
-
-    info.className =
-      "cart-item-info";
-
-    const name =
-      document.createElement(
-        "strong"
-      );
-
-    name.textContent =
-      item.name || "Product";
-
-    const itemPrice =
-      document.createElement(
-        "span"
-      );
-
-    itemPrice.textContent =
-      "$" +
-      price.toFixed(2);
-
-    // Quantity
-    const quantityBox =
-      document.createElement(
-        "div"
-      );
-
-    quantityBox.className =
-      "cart-quantity";
-
-    const minus =
-      document.createElement(
-        "button"
-      );
-
-    minus.type = "button";
-    minus.textContent = "−";
-
-    minus.addEventListener(
-      "click",
-      function (event) {
-        event.stopPropagation();
-
-        changeQuantity(
-          item.id,
-          -1
-        );
-      }
-    );
-
-    const number =
-      document.createElement(
-        "span"
-      );
-
-    number.textContent =
-      quantity;
-
-    const plus =
-      document.createElement(
-        "button"
-      );
-
-    plus.type = "button";
-    plus.textContent = "+";
-
-    plus.addEventListener(
-      "click",
-      function (event) {
-        event.stopPropagation();
-
-        changeQuantity(
-          item.id,
-          1
-        );
-      }
-    );
-
-    quantityBox.appendChild(
-      minus
-    );
-
-    quantityBox.appendChild(
-      number
-    );
-
-    quantityBox.appendChild(
-      plus
-    );
-
-    // Remove
-    const remove =
-      document.createElement(
-        "button"
-      );
-
-    remove.type = "button";
-    remove.className =
-      "cart-remove";
-
-    remove.textContent =
-      language === "ku"
-        ? "سڕینەوە"
-        : "Remove";
-
-    remove.addEventListener(
-      "click",
-      function (event) {
-        event.stopPropagation();
-
-        removeFromCart(
-          item.id
-        );
-      }
-    );
-
-    info.appendChild(name);
-    info.appendChild(itemPrice);
-    info.appendChild(
-      quantityBox
-    );
-    info.appendChild(remove);
-
-    row.appendChild(
-      imageBox
-    );
-
-    row.appendChild(
-      info
-    );
-
-    items.appendChild(
-      row
-    );
-  });
-
-  total.textContent =
-    "$" +
-    totalUSD.toFixed(2);
-}
-
-// =====================================================
-// WHATSAPP
-// =====================================================
-
-function sendOrder() {
-  if (!cart.length) {
-    alert(
-      language === "ku"
-        ? "سەبەتەکەت بەتاڵە."
-        : "Your cart is empty."
-    );
-
-    return;
-  }
-
-  let message =
-    language === "ku"
-      ? "سڵاو، دەمەوێت ئەم بەرهەمانە داوا بکەم:\n\n"
-      : "Hello, I would like to order:\n\n";
-
-  let total = 0;
-
-  cart.forEach(function (item) {
-    const price =
-      Number(
-        item.price_usd || 0
-      );
-
-    const quantity =
-      Number(
-        item.quantity || 0
-      );
-
-    const itemTotal =
-      price * quantity;
-
-    total += itemTotal;
-
-    message +=
-      "• " +
-      item.name +
-      " x" +
-      quantity +
-      " - $" +
-      itemTotal.toFixed(2) +
-      "\n";
-  });
-
-  message +=
-    "\n" +
-    (
-      language === "ku"
-        ? "کۆی گشتی: $"
-        : "Total: $"
-    ) +
-    total.toFixed(2);
-
-  const url =
-    "https://wa.me/" +
-    WHATSAPP_NUMBER +
-    "?text=" +
-    encodeURIComponent(
-      message
-    );
-
-  window.open(
-    url,
-    "_blank"
-  );
-}
-
-// =====================================================
-// PRODUCT DETAILS
-// =====================================================
-
-function openProductModal(id) {
-  const product =
-    products.find(function (item) {
-      return String(item.id) ===
-        String(id);
-    });
-
-  if (!product) return;
-
-  selectedProduct =
-    product;
-
-  const overlay =
-    document.getElementById(
-      "productDetailsOverlay"
-    );
-
-  if (!overlay) return;
-
-  const brand =
-    document.getElementById(
-      "detailsBrand"
-    );
-
-  const name =
-    document.getElementById(
-      "detailsName"
-    );
-
-  const category =
-    document.getElementById(
-      "detailsCategory"
-    );
-
-  const connection =
-    document.getElementById(
-      "detailsConnection"
-    );
-
-  const usd =
-    document.getElementById(
-      "detailsUSD"
-    );
-
-  const iqd =
-    document.getElementById(
-      "detailsIQD"
-    );
-
-  const switchRow =
-    document.getElementById(
-      "detailsSwitchRow"
-    );
-
-  const switchText =
-    document.getElementById(
-      "detailsSwitch"
-    );
-
-  const image =
-    document.getElementById(
-      "detailsImage"
-    );
-
+  imageArea.appendChild(img);
+} else {
   const noImage =
-    document.getElementById(
-      "detailsNoImage"
-    );
+    document.createElement("div");
 
-  if (brand) {
-    brand.textContent =
-      product.brand ||
-      "AH STORE";
+  noImage.className = "no-image";
+  noImage.textContent = "AHSTORE";
+
+  imageArea.appendChild(noImage);
+}
+
+const info =
+  document.createElement("div");
+
+info.className = "product-info";
+
+const brand =
+  document.createElement("div");
+
+brand.className = "product-brand";
+brand.textContent =
+  product.brand || "";
+
+const name =
+  document.createElement("h3");
+
+name.textContent =
+  product.name || "";
+
+const meta =
+  document.createElement("div");
+
+meta.className = "product-meta";
+
+const category =
+  document.createElement("span");
+
+category.textContent =
+  formatCategory(product.category);
+
+meta.appendChild(category);
+
+if (product.connection) {
+  const connection =
+    document.createElement("span");
+
+  connection.textContent =
+    product.connection;
+
+  meta.appendChild(connection);
+}
+
+info.appendChild(brand);
+info.appendChild(name);
+info.appendChild(meta);
+
+if (
+  product.switch_type &&
+  String(product.category)
+    .toLowerCase() === "keyboard"
+) {
+  const switchType =
+    document.createElement("div");
+
+  switchType.className =
+    "switch-type";
+
+  switchType.textContent =
+    `${
+      language === "ku"
+        ? "سویچە"
+        : "Switch"
+    }: ${product.switch_type}`;
+
+  info.appendChild(switchType);
+}
+
+const price =
+  document.createElement("div");
+
+price.className = "price";
+
+const usd =
+  document.createElement("span");
+
+usd.textContent =
+  `$${Number(
+    product.price_usd || 0
+  ).toFixed(2)}`;
+
+const iqd =
+  document.createElement("small");
+
+iqd.textContent =
+  `${Number(
+    product.price_iqd || 0
+  ).toLocaleString()} IQD`;
+
+price.appendChild(usd);
+price.appendChild(iqd);
+
+info.appendChild(price);
+
+const addButton =
+  document.createElement("button");
+
+addButton.className = "add-cart";
+
+addButton.type = "button";
+
+addButton.textContent =
+  language === "ku"
+    ? "زیادکردن بۆ سەبەت"
+    : "Add to Cart";
+
+addButton.addEventListener(
+  "click",
+  (event) => {
+    event.stopPropagation();
+
+    addToCart(product.id);
   }
+);
 
-  if (name) {
-    name.textContent =
-      product.name ||
-      "";
+info.appendChild(addButton);
+
+card.appendChild(imageArea);
+card.appendChild(info);
+
+card.addEventListener(
+  "click",
+  () => {
+    openProductDetails(product.id);
   }
+);
 
-  if (category) {
-    category.textContent =
-      product.category ||
-      "";
-  }
+container.appendChild(card);
+```
 
-  if (connection) {
-    connection.textContent =
-      product.connection ||
-      "";
-  }
+});
+}
 
-  if (usd) {
-    usd.textContent =
-      "$" +
-      Number(
-        product.price_usd || 0
-      ).toFixed(2);
-  }
+/* =========================
+CATEGORY
+========================= */
 
-  if (iqd) {
-    iqd.textContent =
-      Number(
-        product.price_iqd || 0
-      ).toLocaleString() +
-      " IQD";
-  }
+function formatCategory(category) {
+if (!category) return "";
 
-  if (
-    String(
-      product.category || ""
-    ).toLowerCase() ===
-      "keyboard" &&
-    product.switch_type
-  ) {
-    if (switchText) {
-      switchText.textContent =
-        product.switch_type +
-        " Switch";
-    }
+if (language !== "ku") {
+return category;
+}
 
-    if (switchRow) {
-      switchRow.classList.remove(
-        "hidden"
-      );
-    }
-  } else {
-    if (switchText) {
-      switchText.textContent =
-        "";
-    }
+const translations = {
+keyboard: "کیبۆرد",
+mouse: "ماوس",
+headset: "هێدسێت",
+mousepad: "ماوس پاد",
+controller: "کۆنتڕۆڵەر",
+monitor: "مۆنیتەر",
+accessories: "ئاکسسواری",
+other: "هی تر"
+};
 
-    if (switchRow) {
-      switchRow.classList.add(
-        "hidden"
-      );
-    }
-  }
+return (
+translations[
+String(category).toLowerCase()
+] || category
+);
+}
 
-  if (product.image_url) {
-    if (image) {
-      image.src =
-        product.image_url;
+/* =========================
+SEARCH / FILTER
+========================= */
 
-      image.classList.remove(
-        "hidden"
-      );
-    }
+function filterProducts() {
+const search =
+(
+$("searchInput")?.value || ""
+).toLowerCase();
 
-    if (noImage) {
-      noImage.classList.add(
-        "hidden"
-      );
-    }
-  } else {
-    if (image) {
-      image.removeAttribute(
-        "src"
-      );
+const category =
+$("categoryFilter")?.value || "all";
 
-      image.classList.add(
-        "hidden"
-      );
-    }
+const filtered =
+products.filter((product) => {
+const text = `         ${product.name || ""}
+        ${product.brand || ""}
+        ${product.category || ""}
+        ${product.connection || ""}
+        ${product.switch_type || ""}
+      `.toLowerCase();
 
-    if (noImage) {
-      noImage.classList.remove(
-        "hidden"
-      );
-    }
-  }
+```
+  const searchMatch =
+    text.includes(search);
 
-  overlay.classList.remove(
+  const categoryMatch =
+    category === "all" ||
+    String(product.category || "")
+      .toLowerCase() ===
+      category.toLowerCase();
+
+  return (
+    searchMatch &&
+    categoryMatch
+  );
+});
+```
+
+renderProducts(filtered);
+}
+
+/* =========================
+PRODUCT DETAILS
+========================= */
+
+function openProductDetails(id) {
+const product =
+findProduct(id);
+
+if (!product) return;
+
+selectedProductId =
+product.id;
+
+const overlay =
+$("productDetailsOverlay");
+
+if (!overlay) return;
+
+const image =
+$("detailsImage");
+
+const noImage =
+$("detailsNoImage");
+
+if (image) {
+if (product.image_url) {
+image.src =
+product.image_url;
+
+```
+  image.alt =
+    product.name || "Product";
+
+  image.classList.remove(
+    "hidden"
+  );
+
+  noImage?.classList.add(
+    "hidden"
+  );
+} else {
+  image.removeAttribute("src");
+
+  image.classList.add(
+    "hidden"
+  );
+
+  noImage?.classList.remove(
     "hidden"
   );
 }
+```
 
-function closeProductModal() {
-  const overlay =
-    document.getElementById(
-      "productDetailsOverlay"
-    );
-
-  if (overlay) {
-    overlay.classList.add(
-      "hidden"
-    );
-  }
-
-  selectedProduct =
-    null;
 }
 
-// =====================================================
-// ADMIN
-// =====================================================
+if ($("detailsBrand")) {
+$("detailsBrand").textContent =
+product.brand || "";
+}
 
-function openAdmin() {
-  const modal =
-    document.getElementById(
-      "adminModal"
-    );
+if ($("detailsName")) {
+$("detailsName").textContent =
+product.name || "";
+}
 
-  if (modal) {
-    modal.classList.remove(
-      "hidden"
+if ($("detailsCategory")) {
+$("detailsCategory").textContent =
+formatCategory(
+product.category
+);
+}
+
+if ($("detailsConnection")) {
+$("detailsConnection").textContent =
+product.connection || "";
+}
+
+const switchRow =
+$("detailsSwitchRow");
+
+const switchText =
+$("detailsSwitch");
+
+if (
+product.switch_type &&
+String(product.category)
+.toLowerCase() === "keyboard"
+) {
+if (switchText) {
+switchText.textContent =
+`${
+          language === "ku"
+            ? "سویچە"
+            : "Switch"
+        }: ${product.switch_type}`;
+}
+
+```
+switchRow?.classList.remove(
+  "hidden"
+);
+```
+
+} else {
+switchRow?.classList.add(
+"hidden"
+);
+}
+
+if ($("detailsUSD")) {
+$("detailsUSD").textContent =
+`$${Number(
+        product.price_usd || 0
+      ).toFixed(2)}`;
+}
+
+if ($("detailsIQD")) {
+$("detailsIQD").textContent =
+`${Number(
+        product.price_iqd || 0
+      ).toLocaleString()} IQD`;
+}
+
+if ($("detailsAddCart")) {
+$("detailsAddCart").textContent =
+language === "ku"
+? "زیادکردن بۆ سەبەت"
+: "ADD TO CART";
+}
+
+overlay.classList.remove(
+"hidden"
+);
+}
+
+function closeProductDetails() {
+$("productDetailsOverlay")
+?.classList.add("hidden");
+
+selectedProductId = null;
+}
+
+/* =========================
+PRODUCT FINDER
+========================= */
+
+function findProduct(id) {
+return products.find(
+(product) =>
+String(product.id) ===
+String(id)
+);
+}
+
+/* =========================
+CART
+========================= */
+
+function addToCart(id) {
+const product =
+findProduct(id);
+
+if (!product) {
+console.error(
+"Product not found:",
+id
+);
+
+```
+return;
+```
+
+}
+
+const existing =
+cart.find(
+(item) =>
+String(item.id) ===
+String(product.id)
+);
+
+if (existing) {
+existing.quantity++;
+} else {
+cart.push({
+id: product.id,
+name: product.name,
+price_usd:
+product.price_usd,
+price_iqd:
+product.price_iqd,
+quantity: 1
+});
+}
+
+saveCart();
+renderCart();
+openCart();
+}
+
+function removeFromCart(id) {
+cart =
+cart.filter(
+(item) =>
+String(item.id) !==
+String(id)
+);
+
+saveCart();
+renderCart();
+}
+
+function changeQuantity(
+id,
+amount
+) {
+const item =
+cart.find(
+(cartItem) =>
+String(cartItem.id) ===
+String(id)
+);
+
+if (!item) return;
+
+item.quantity += amount;
+
+if (item.quantity <= 0) {
+removeFromCart(id);
+return;
+}
+
+saveCart();
+renderCart();
+}
+
+function saveCart() {
+localStorage.setItem(
+"ahstore_cart",
+JSON.stringify(cart)
+);
+}
+
+function renderCart() {
+const container =
+$("cartItems");
+
+const count =
+$("cartCount");
+
+const total =
+$("cartTotal");
+
+if (!container) return;
+
+const totalItems =
+cart.reduce(
+(sum, item) =>
+sum +
+Number(item.quantity || 0),
+0
+);
+
+if (count) {
+count.textContent =
+totalItems;
+}
+
+if (!cart.length) {
+container.innerHTML =
+`<div class="loading">
+        ${
+          language === "ku"
+            ? "سەبەتەکە بەتاڵە"
+            : "Your cart is empty"
+        }       </div>`;
+
+```
+if (total) {
+  total.textContent =
+    "$0";
+}
+
+return;
+```
+
+}
+
+let totalUSD = 0;
+
+container.innerHTML = "";
+
+cart.forEach((item) => {
+totalUSD +=
+Number(
+item.price_usd || 0
+) *
+Number(
+item.quantity || 0
+);
+
+```
+const cartItem =
+  document.createElement("div");
+
+cartItem.className =
+  "cart-item";
+
+const info =
+  document.createElement("div");
+
+const name =
+  document.createElement(
+    "strong"
+  );
+
+name.textContent =
+  item.name || "";
+
+const price =
+  document.createElement("div");
+
+price.textContent =
+  `$${Number(
+    item.price_usd || 0
+  ).toFixed(2)}`;
+
+info.appendChild(name);
+info.appendChild(price);
+
+const quantity =
+  document.createElement("div");
+
+quantity.className =
+  "quantity";
+
+const minus =
+  document.createElement(
+    "button"
+  );
+
+minus.type = "button";
+minus.textContent = "−";
+
+minus.addEventListener(
+  "click",
+  () => {
+    changeQuantity(
+      item.id,
+      -1
     );
   }
+);
+
+const number =
+  document.createElement("span");
+
+number.textContent =
+  item.quantity;
+
+const plus =
+  document.createElement(
+    "button"
+  );
+
+plus.type = "button";
+plus.textContent = "+";
+
+plus.addEventListener(
+  "click",
+  () => {
+    changeQuantity(
+      item.id,
+      1
+    );
+  }
+);
+
+quantity.appendChild(minus);
+quantity.appendChild(number);
+quantity.appendChild(plus);
+
+const remove =
+  document.createElement(
+    "button"
+  );
+
+remove.type = "button";
+remove.className =
+  "remove-cart";
+
+remove.textContent = "×";
+
+remove.addEventListener(
+  "click",
+  () => {
+    removeFromCart(
+      item.id
+    );
+  }
+);
+
+cartItem.appendChild(info);
+cartItem.appendChild(quantity);
+cartItem.appendChild(remove);
+
+container.appendChild(
+  cartItem
+);
+```
+
+});
+
+if (total) {
+total.textContent =
+`$${totalUSD.toFixed(2)}`;
+}
+}
+
+function openCart() {
+$("cartDrawer")
+?.classList.remove("hidden");
+
+$("cartDrawer")
+?.classList.add("open");
+
+$("cartOverlay")
+?.classList.remove("hidden");
+}
+
+function closeCart() {
+$("cartDrawer")
+?.classList.remove("open");
+
+$("cartDrawer")
+?.classList.add("hidden");
+
+$("cartOverlay")
+?.classList.add("hidden");
+}
+
+/* =========================
+WHATSAPP
+========================= */
+
+function checkoutWhatsApp() {
+if (!cart.length) {
+alert(
+language === "ku"
+? "سەبەتەکە بەتاڵە."
+: "Your cart is empty."
+);
+
+```
+return;
+```
+
+}
+
+let message =
+language === "ku"
+? "سڵاو AH STORE، دەمەوێت ئەم بەرهەمانە داوا بکەم:\n\n"
+: "Hello AH STORE, I would like to order:\n\n";
+
+cart.forEach((item) => {
+message +=
+`• ${item.name} x${item.quantity}\n`;
+});
+
+message +=
+language === "ku"
+? "\nتکایە زانیارییەکانی داواکارییەکەم بۆ بنێرە."
+: "\nPlease send me the order details.";
+
+const url =
+`https://wa.me/${WHATSAPP}?text=` +
+encodeURIComponent(message);
+
+window.open(
+url,
+"_blank"
+);
+}
+
+/* =========================
+LANGUAGE
+========================= */
+
+function toggleLanguage() {
+language =
+language === "en"
+? "ku"
+: "en";
+
+localStorage.setItem(
+"ahstore_language",
+language
+);
+
+applyLanguage();
+
+renderProducts(
+getFilteredProducts()
+);
+
+renderCart();
+
+if (selectedProductId !== null) {
+openProductDetails(
+selectedProductId
+);
+}
+}
+
+function applyLanguage() {
+document.documentElement.lang =
+language === "ku"
+? "ku"
+: "en";
+
+document.documentElement.dir =
+language === "ku"
+? "rtl"
+: "ltr";
+
+document
+.querySelectorAll("[data-en]")
+.forEach((element) => {
+const text =
+language === "ku"
+? element.dataset.ku
+: element.dataset.en;
+
+```
+  if (text) {
+    element.textContent =
+      text;
+  }
+});
+```
+
+const input =
+$("searchInput");
+
+if (input) {
+input.placeholder =
+language === "ku"
+? input.dataset.placeholderKu
+: input.dataset.placeholderEn;
+}
+
+const languageButton =
+$("languageBtn");
+
+if (languageButton) {
+languageButton.textContent =
+language === "ku"
+? "English"
+: "کوردی";
+}
+}
+
+function getFilteredProducts() {
+const search =
+(
+$("searchInput")?.value ||
+""
+).toLowerCase();
+
+const category =
+$("categoryFilter")?.value ||
+"all";
+
+return products.filter(
+(product) => {
+const text = `         ${product.name || ""}
+        ${product.brand || ""}
+        ${product.category || ""}
+        ${product.connection || ""}
+        ${product.switch_type || ""}
+      `.toLowerCase();
+
+```
+  const searchMatch =
+    text.includes(search);
+
+  const categoryMatch =
+    category === "all" ||
+    String(product.category || "")
+      .toLowerCase() ===
+      category.toLowerCase();
+
+  return (
+    searchMatch &&
+    categoryMatch
+  );
+}
+```
+
+);
+}
+
+/* =========================
+ADMIN
+========================= */
+
+function openAdmin() {
+$("adminModal")
+?.classList.remove("hidden");
+
+checkAuth();
 }
 
 function closeAdmin() {
-  const modal =
-    document.getElementById(
-      "adminModal"
-    );
-
-  if (modal) {
-    modal.classList.add(
-      "hidden"
-    );
-  }
+$("adminModal")
+?.classList.add("hidden");
 }
 
-async function checkLogin() {
-  const result =
-    await db.auth.getSession();
+async function checkAuth() {
+const {
+data: { session }
+} = await db.auth.getSession();
 
-  const session =
-    result.data?.session;
-
-  if (session) {
-    showAdminPanel();
-  } else {
-    showLogin();
-  }
+if (session) {
+showAdminPanel();
+} else {
+showLoginPanel();
+}
 }
 
-function showLogin() {
-  const login =
-    document.getElementById(
-      "loginSection"
-    );
+function showLoginPanel() {
+$("loginSection")
+?.classList.remove("hidden");
 
-  const panel =
-    document.getElementById(
-      "adminPanel"
-    );
-
-  if (login) {
-    login.classList.remove(
-      "hidden"
-    );
-  }
-
-  if (panel) {
-    panel.classList.add(
-      "hidden"
-    );
-  }
+$("adminPanel")
+?.classList.add("hidden");
 }
 
 function showAdminPanel() {
-  const login =
-    document.getElementById(
-      "loginSection"
-    );
+$("loginSection")
+?.classList.add("hidden");
 
-  const panel =
-    document.getElementById(
-      "adminPanel"
-    );
+$("adminPanel")
+?.classList.remove("hidden");
 
-  if (login) {
-    login.classList.add(
-      "hidden"
-    );
-  }
-
-  if (panel) {
-    panel.classList.remove(
-      "hidden"
-    );
-  }
-
-  renderAdminProducts();
+renderAdminProducts();
 }
 
-async function login(event) {
-  event.preventDefault();
+async function loginAdmin(event) {
+event.preventDefault();
 
-  const emailInput =
-    document.getElementById(
-      "adminEmail"
-    );
+const email =
+$("adminEmail")
+?.value.trim();
 
-  const passwordInput =
-    document.getElementById(
-      "adminPassword"
-    );
+const password =
+$("adminPassword")
+?.value;
 
-  const message =
-    document.getElementById(
-      "loginMessage"
-    );
+const message =
+$("loginMessage");
 
-  const email =
-    emailInput
-      ? emailInput.value.trim()
-      : "";
-
-  const password =
-    passwordInput
-      ? passwordInput.value
-      : "";
-
-  if (!email || !password) {
-    return;
-  }
-
-  if (message) {
-    message.textContent =
-      "Signing in...";
-  }
-
-  const result =
-    await db.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
-
-  if (result.error) {
-    console.error(
-      "LOGIN ERROR:",
-      result.error
-    );
-
-    if (message) {
-      message.textContent =
-        result.error.message;
-    }
-
-    return;
-  }
-
-  if (message) {
-    message.textContent =
-      "";
-  }
-
-  showAdminPanel();
-
-  await loadProducts();
+if (!email || !password) {
+return;
 }
 
-async function logout() {
-  await db.auth.signOut();
-
-  showLogin();
+if (message) {
+message.textContent =
+"Signing in...";
 }
 
-// =====================================================
-// ADMIN PRODUCT LIST
-// =====================================================
+const { error } =
+await db.auth.signInWithPassword({
+email,
+password
+});
 
-function renderAdminProducts() {
-  const list =
-    document.getElementById(
-      "adminProductsList"
-    );
-
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  if (!products.length) {
-    list.innerHTML =
-      "<p>No products yet.</p>";
-
-    return;
-  }
-
-  products.forEach(
-    function (product) {
-      const item =
-        document.createElement(
-          "div"
-        );
-
-      item.className =
-        "admin-product";
-
-      const info =
-        document.createElement(
-          "div"
-        );
-
-      info.className =
-        "admin-product-info";
-
-      const name =
-        document.createElement(
-          "strong"
-        );
-
-      name.textContent =
-        product.name ||
-        "Product";
-
-      const details =
-        document.createElement(
-          "span"
-        );
-
-      details.textContent =
-        (product.brand || "") +
-        " • " +
-        (product.category || "") +
-        " • $" +
-        Number(
-          product.price_usd || 0
-        ).toFixed(2);
-
-      info.appendChild(name);
-      info.appendChild(details);
-
-      const actions =
-        document.createElement(
-          "div"
-        );
-
-      actions.className =
-        "admin-product-actions";
-
-      const edit =
-        document.createElement(
-          "button"
-        );
-
-      edit.type = "button";
-      edit.textContent =
-        "EDIT";
-
-      edit.addEventListener(
-        "click",
-        function () {
-          editProduct(
-            product.id
-          );
-        }
-      );
-
-      const remove =
-        document.createElement(
-          "button"
-        );
-
-      remove.type = "button";
-      remove.textContent =
-        "DELETE";
-
-      remove.addEventListener(
-        "click",
-        function () {
-          deleteProduct(
-            product.id
-          );
-        }
-      );
-
-      actions.appendChild(
-        edit
-      );
-
-      actions.appendChild(
-        remove
-      );
-
-      item.appendChild(
-        info
-      );
-
-      item.appendChild(
-        actions
-      );
-
-      list.appendChild(
-        item
-      );
-    }
-  );
+if (error) {
+if (message) {
+message.textContent =
+"Login failed: " +
+error.message;
 }
 
-// =====================================================
-// EDIT PRODUCT
-// =====================================================
+```
+return;
+```
 
-function editProduct(id) {
-  const product =
-    products.find(function (item) {
-      return String(item.id) ===
-        String(id);
-    });
-
-  if (!product) return;
-
-  editingId =
-    product.id;
-
-  setValue(
-    "productId",
-    product.id
-  );
-
-  setValue(
-    "productName",
-    product.name || ""
-  );
-
-  setValue(
-    "productBrand",
-    product.brand || ""
-  );
-
-  setValue(
-    "productCategory",
-    product.category || "other"
-  );
-
-  setValue(
-    "productUSD",
-    product.price_usd || ""
-  );
-
-  setValue(
-    "productIQD",
-    product.price_iqd || ""
-  );
-
-  setValue(
-    "productConnection",
-    product.connection || "Wired"
-  );
-
-  setValue(
-    "productSwitch",
-    product.switch_type || ""
-  );
-
-  const preview =
-    document.getElementById(
-      "imagePreview"
-    );
-
-  if (preview) {
-    if (product.image_url) {
-      preview.src =
-        product.image_url;
-
-      preview.classList.remove(
-        "hidden"
-      );
-    } else {
-      preview.src = "";
-
-      preview.classList.add(
-        "hidden"
-      );
-    }
-  }
-
-  const saveButton =
-    document.getElementById(
-      "saveProductBtn"
-    );
-
-  const cancelButton =
-    document.getElementById(
-      "cancelEditBtn"
-    );
-
-  if (saveButton) {
-    saveButton.textContent =
-      "SAVE CHANGES";
-  }
-
-  if (cancelButton) {
-    cancelButton.classList.remove(
-      "hidden"
-    );
-  }
-
-  updateSwitchField();
 }
 
-function cancelEdit() {
-  editingId =
-    null;
-
-  const form =
-    document.getElementById(
-      "productForm"
-    );
-
-  if (form) {
-    form.reset();
-  }
-
-  const productId =
-    document.getElementById(
-      "productId"
-    );
-
-  if (productId) {
-    productId.value =
-      "";
-  }
-
-  const preview =
-    document.getElementById(
-      "imagePreview"
-    );
-
-  if (preview) {
-    preview.src = "";
-
-    preview.classList.add(
-      "hidden"
-    );
-  }
-
-  const saveButton =
-    document.getElementById(
-      "saveProductBtn"
-    );
-
-  const cancelButton =
-    document.getElementById(
-      "cancelEditBtn"
-    );
-
-  if (saveButton) {
-    saveButton.textContent =
-      "ADD PRODUCT";
-  }
-
-  if (cancelButton) {
-    cancelButton.classList.add(
-      "hidden"
-    );
-  }
-
-  updateSwitchField();
+if (message) {
+message.textContent = "";
 }
 
-function setValue(
-  id,
-  value
-) {
-  const element =
-    document.getElementById(id);
-
-  if (element) {
-    element.value =
-      value;
-  }
+showAdminPanel();
 }
 
-// =====================================================
-// SAVE PRODUCT
-// =====================================================
+async function logoutAdmin() {
+await db.auth.signOut();
+
+editingId = null;
+
+showLoginPanel();
+}
+
+/* =========================
+SAVE PRODUCT
+========================= */
 
 async function saveProduct(event) {
-  event.preventDefault();
+event.preventDefault();
 
-  const message =
-    document.getElementById(
-      "productMessage"
+const name =
+$("productName")
+?.value.trim();
+
+const brand =
+$("productBrand")
+?.value.trim();
+
+const category =
+$("productCategory")
+?.value;
+
+const priceUSD =
+Number(
+$("productUSD")
+?.value || 0
+);
+
+const priceIQD =
+Number(
+$("productIQD")
+?.value || 0
+);
+
+const connection =
+$("productConnection")
+?.value;
+
+const switchType =
+$("productSwitch")
+?.value.trim();
+
+const imageFile =
+$("productImage")
+?.files?.[0];
+
+const message =
+$("productMessage");
+
+const saveButton =
+$("saveProductBtn");
+
+if (!name) {
+if (message) {
+message.textContent =
+"Product name is required.";
+}
+
+```
+return;
+```
+
+}
+
+if (saveButton) {
+saveButton.disabled = true;
+saveButton.textContent =
+editingId
+? "UPDATING..."
+: "ADDING...";
+}
+
+let imageUrl = "";
+
+/* =========================
+KEEP OLD IMAGE
+========================= */
+
+if (editingId !== null) {
+const oldProduct =
+findProduct(editingId);
+
+```
+imageUrl =
+  oldProduct?.image_url || "";
+```
+
+}
+
+/* =========================
+IMAGE UPLOAD
+========================= */
+
+if (imageFile) {
+const extension =
+imageFile.name
+.split(".")
+.pop()
+.toLowerCase();
+
+```
+const fileName =
+  `${crypto.randomUUID()}.${extension}`;
+
+const {
+  error: uploadError
+} =
+  await db.storage
+    .from("products")
+    .upload(
+      fileName,
+      imageFile
     );
 
-  const saveButton =
-    document.getElementById(
-      "saveProductBtn"
-    );
-
-  const name =
-    document.getElementById(
-      "productName"
-    )?.value.trim() || "";
-
-  const brand =
-    document.getElementById(
-      "productBrand"
-    )?.value.trim() || "";
-
-  const category =
-    document.getElementById(
-      "productCategory"
-    )?.value || "other";
-
-  const priceUSD =
-    Number(
-      document.getElementById(
-        "productUSD"
-      )?.value || 0
-    );
-
-  const priceIQD =
-    Number(
-      document.getElementById(
-        "productIQD"
-      )?.value || 0
-    );
-
-  const connection =
-    document.getElementById(
-      "productConnection"
-    )?.value || "Wired";
-
-  const switchType =
-    document.getElementById(
-      "productSwitch"
-    )?.value.trim() || "";
-
-  const imageInput =
-    document.getElementById(
-      "productImage"
-    );
-
-  if (!name) {
-    if (message) {
-      message.textContent =
-        "Product name is required.";
-    }
-
-    return;
-  }
-
-  if (message) {
-    message.textContent =
-      "Saving...";
-  }
-
-  if (saveButton) {
-    saveButton.disabled =
-      true;
-  }
-
-  let imageUrl =
-    null;
-
-  // Existing image
-  if (editingId) {
-    const oldProduct =
-      products.find(function (item) {
-        return String(item.id) ===
-          String(editingId);
-      });
-
-    if (oldProduct) {
-      imageUrl =
-        oldProduct.image_url ||
-        null;
-    }
-  }
-
-  // New image
-  if (
-    imageInput &&
-    imageInput.files &&
-    imageInput.files.length
-  ) {
-    const file =
-      imageInput.files[0];
-
-    const extension =
-      file.name.includes(".")
-        ? file.name
-            .split(".")
-            .pop()
-        : "jpg";
-
-    const path =
-      Date.now() +
-      "-" +
-      Math.random()
-        .toString(36)
-        .substring(2) +
-      "." +
-      extension;
-
-    const upload =
-      await db.storage
-        .from("products")
-        .upload(
-          path,
-          file,
-          {
-            upsert: false
-          }
-        );
-
-    if (upload.error) {
-      console.error(
-        "IMAGE UPLOAD ERROR:",
-        upload.error
-      );
-
-      if (message) {
-        message.textContent =
-          "Image upload failed: " +
-          upload.error.message;
-      }
-
-      if (saveButton) {
-        saveButton.disabled =
-          false;
-      }
-
-      return;
-    }
-
-    const publicURL =
-      db.storage
-        .from("products")
-        .getPublicUrl(path);
-
-    imageUrl =
-      publicURL.data.publicUrl;
-  }
-
-  const data = {
-    name: name,
-    brand: brand,
-    category: category,
-    price_usd: priceUSD,
-    price_iqd: priceIQD,
-    image_url: imageUrl,
-    connection: connection,
-    switch_type:
-      category === "keyboard"
-        ? switchType
-        : null
-  };
-
-  let result;
-
-  if (editingId) {
-    result =
-      await db
-        .from("products")
-        .update(data)
-        .eq("id", editingId);
-  } else {
-    result =
-      await db
-        .from("products")
-        .insert(data);
-  }
-
-  if (result.error) {
-    console.error(
-      "PRODUCT SAVE ERROR:",
-      result.error
-    );
-
-    if (message) {
-      message.textContent =
-        "Error: " +
-        result.error.message;
-    }
-
-    if (saveButton) {
-      saveButton.disabled =
-        false;
-    }
-
-    return;
-  }
-
-  if (message) {
-    message.textContent =
-      editingId
-        ? "Product updated!"
-        : "Product added!";
-  }
-
-  editingId =
-    null;
-
-  cancelEdit();
+if (uploadError) {
+  alert(
+    "Image upload failed: " +
+    uploadError.message
+  );
 
   if (saveButton) {
     saveButton.disabled =
       false;
+
+    saveButton.textContent =
+      editingId
+        ? "UPDATE PRODUCT"
+        : "ADD PRODUCT";
   }
 
-  await loadProducts();
+  return;
 }
 
-// =====================================================
-// DELETE PRODUCT
-// =====================================================
-
-async function deleteProduct(id) {
-  const product =
-    products.find(function (item) {
-      return String(item.id) ===
-        String(id);
-    });
-
-  if (!product) return;
-
-  const confirmed =
-    window.confirm(
-      "Delete " +
-        product.name +
-        "?"
+const {
+  data: publicData
+} =
+  db.storage
+    .from("products")
+    .getPublicUrl(
+      fileName
     );
 
-  if (!confirmed) return;
+imageUrl =
+  publicData?.publicUrl || "";
+```
 
-  const result =
-    await db
-      .from("products")
-      .delete()
-      .eq("id", id);
-
-  if (result.error) {
-    console.error(
-      "DELETE ERROR:",
-      result.error
-    );
-
-    alert(
-      "Delete failed: " +
-        result.error.message
-    );
-
-    return;
-  }
-
-  products =
-    products.filter(function (
-      item
-    ) {
-      return String(item.id) !==
-        String(id);
-    });
-
-  renderProducts();
-  renderAdminProducts();
 }
 
-// =====================================================
-// IMAGE PREVIEW / CATEGORY
-// =====================================================
+const productData = {
+name,
+brand,
+category,
 
-function handleChange(event) {
-  const target =
-    event.target;
+```
+price_usd:
+  priceUSD,
 
-  if (!target) return;
+price_iqd:
+  priceIQD,
 
-  // Image preview
-  if (
-    target.id ===
-    "productImage"
-  ) {
-    const file =
-      target.files?.[0];
+connection,
 
-    const preview =
-      document.getElementById(
-        "imagePreview"
-      );
+switch_type:
+  category === "keyboard"
+    ? switchType
+    : null,
 
-    if (!preview) return;
+image_url:
+  imageUrl
+```
 
-    if (!file) {
-      preview.src = "";
+};
 
-      preview.classList.add(
-        "hidden"
-      );
+let result;
 
-      return;
-    }
-
-    const reader =
-      new FileReader();
-
-    reader.onload =
-      function () {
-        preview.src =
-          reader.result;
-
-        preview.classList.remove(
-          "hidden"
-        );
-      };
-
-    reader.readAsDataURL(
-      file
-    );
-  }
-
-  // Category
-  if (
-    target.id ===
-    "productCategory"
-  ) {
-    updateSwitchField();
-  }
+if (editingId !== null) {
+result =
+await db
+.from("products")
+.update(productData)
+.eq(
+"id",
+editingId
+);
+} else {
+result =
+await db
+.from("products")
+.insert(
+productData
+);
 }
 
-function updateSwitchField() {
-  const category =
-    document.getElementById(
-      "productCategory"
-    )?.value;
+if (result.error) {
+alert(
+"Could not save product: " +
+result.error.message
+);
 
-  const field =
-    document.getElementById(
-      "switchField"
-    );
+```
+if (saveButton) {
+  saveButton.disabled =
+    false;
 
-  if (!field) return;
-
-  if (category === "keyboard") {
-    field.classList.remove(
-      "hidden"
-    );
-  } else {
-    field.classList.add(
-      "hidden"
-    );
-  }
+  saveButton.textContent =
+    editingId !== null
+      ? "UPDATE PRODUCT"
+      : "ADD PRODUCT";
 }
 
-// =====================================================
-// SUPABASE LOGIN STATE
-// =====================================================
+return;
+```
 
-db.auth.onAuthStateChange(
-  function (event, session) {
-    if (session) {
-      showAdminPanel();
-    } else {
-      showLogin();
-    }
+}
+
+alert(
+editingId !== null
+? "Product updated!"
+: "Product added!"
+);
+
+editingId = null;
+
+$("productForm")?.reset();
+
+$("cancelEditBtn")
+?.classList.add("hidden");
+
+if (saveButton) {
+saveButton.disabled = false;
+saveButton.textContent =
+"ADD PRODUCT";
+}
+
+const preview =
+$("imagePreview");
+
+if (preview) {
+preview.src = "";
+preview.classList.add(
+"hidden"
+);
+}
+
+updateSwitchField();
+
+if (message) {
+message.textContent = "";
+}
+
+await loadProducts();
+}
+
+/* =========================
+ADMIN PRODUCTS
+========================= */
+
+function renderAdminProducts() {
+const container =
+$("adminProductsList");
+
+if (!container) return;
+
+if (!products.length) {
+container.innerHTML =
+"<p>No products yet.</p>";
+
+```
+return;
+```
+
+}
+
+container.innerHTML = "";
+
+products.forEach((product) => {
+const item =
+document.createElement("div");
+
+```
+item.className =
+  "admin-product";
+
+const info =
+  document.createElement("div");
+
+const name =
+  document.createElement(
+    "strong"
+  );
+
+name.textContent =
+  product.name || "";
+
+const price =
+  document.createElement(
+    "small"
+  );
+
+price.textContent =
+  `$${Number(
+    product.price_usd || 0
+  ).toFixed(2)} / ${Number(
+    product.price_iqd || 0
+  ).toLocaleString()} IQD`;
+
+info.appendChild(name);
+info.appendChild(price);
+
+const actions =
+  document.createElement("div");
+
+const edit =
+  document.createElement(
+    "button"
+  );
+
+edit.type = "button";
+edit.textContent = "Edit";
+
+edit.addEventListener(
+  "click",
+  () => {
+    editProduct(
+      product.id
+    );
   }
 );
 
-console.log(
-  "AH STORE app.js loaded successfully."
+const remove =
+  document.createElement(
+    "button"
+  );
+
+remove.type = "button";
+remove.textContent =
+  "Delete";
+
+remove.addEventListener(
+  "click",
+  () => {
+    deleteProduct(
+      product.id
+    );
+  }
+);
+
+actions.appendChild(edit);
+actions.appendChild(remove);
+
+item.appendChild(info);
+item.appendChild(actions);
+
+container.appendChild(item);
+```
+
+});
+}
+
+/* =========================
+EDIT PRODUCT
+========================= */
+
+function editProduct(id) {
+const product =
+findProduct(id);
+
+if (!product) return;
+
+editingId =
+product.id;
+
+$("productName").value =
+product.name || "";
+
+$("productBrand").value =
+product.brand || "";
+
+$("productCategory").value =
+product.category || "other";
+
+$("productUSD").value =
+product.price_usd ?? "";
+
+$("productIQD").value =
+product.price_iqd ?? "";
+
+$("productConnection").value =
+product.connection ||
+"Wired";
+
+$("productSwitch").value =
+product.switch_type || "";
+
+const preview =
+$("imagePreview");
+
+if (
+preview &&
+product.image_url
+) {
+preview.src =
+product.image_url;
+
+```
+preview.classList.remove(
+  "hidden"
 );
 ```
+
+}
+
+$("saveProductBtn").textContent =
+"UPDATE PRODUCT";
+
+$("cancelEditBtn")
+?.classList.remove("hidden");
+
+updateSwitchField();
+}
+
+/* =========================
+CANCEL EDIT
+========================= */
+
+function cancelEdit() {
+editingId = null;
+
+$("productForm")?.reset();
+
+$("cancelEditBtn")
+?.classList.add("hidden");
+
+$("saveProductBtn").textContent =
+"ADD PRODUCT";
+
+const preview =
+$("imagePreview");
+
+if (preview) {
+preview.src = "";
+preview.classList.add(
+"hidden"
+);
+}
+
+updateSwitchField();
+}
+
+/* =========================
+DELETE PRODUCT
+========================= */
+
+async function deleteProduct(id) {
+const product =
+findProduct(id);
+
+if (!product) return;
+
+const confirmed =
+confirm(
+`Delete "${product.name}"?`
+);
+
+if (!confirmed) return;
+
+const { error } =
+await db
+.from("products")
+.delete()
+.eq(
+"id",
+product.id
+);
+
+if (error) {
+alert(
+"Delete failed: " +
+error.message
+);
+
+```
+return;
+```
+
+}
+
+if (
+editingId !== null &&
+String(editingId) ===
+String(product.id)
+) {
+cancelEdit();
+}
+
+await loadProducts();
+}
+
+/* =========================
+SWITCH FIELD
+========================= */
+
+function updateSwitchField() {
+const category =
+$("productCategory")
+?.value;
+
+const field =
+$("switchField");
+
+if (!field) return;
+
+if (category === "keyboard") {
+field.classList.remove(
+"hidden"
+);
+} else {
+field.classList.add(
+"hidden"
+);
+}
+}
+
+/* =========================
+IMAGE PREVIEW
+========================= */
+
+function previewImage() {
+const file =
+$("productImage")
+?.files?.[0];
+
+const preview =
+$("imagePreview");
+
+if (!file || !preview) {
+return;
+}
+
+if (
+preview.dataset.objectUrl
+) {
+URL.revokeObjectURL(
+preview.dataset.objectUrl
+);
+}
+
+const objectUrl =
+URL.createObjectURL(file);
+
+preview.dataset.objectUrl =
+objectUrl;
+
+preview.src =
+objectUrl;
+
+preview.classList.remove(
+"hidden"
+);
+}
+
+/* =========================
+GLOBAL FUNCTIONS
+========================= */
+
+window.addToCart =
+addToCart;
+
+window.removeFromCart =
+removeFromCart;
+
+window.changeQuantity =
+changeQuantity;
+
+window.editProduct =
+editProduct;
+
+window.deleteProduct =
+deleteProduct;
+
+window.openProductDetails =
+openProductDetails;
+
+window.closeProductDetails =
+closeProductDetails;
