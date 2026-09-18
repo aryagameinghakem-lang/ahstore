@@ -1155,3 +1155,64 @@ z-index: 999999 !important;
 #productDetailsOverlay .modal-close {
 z-index: 999999 !important;
 }
+/* =========================================
+   FIXED HEADER + MODAL CLOSE BUTTONS
+   ========================================= */
+
+/* Header stays fixed while scrolling */
+.header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 5000 !important;
+}
+
+/* Keep the page content below the fixed header */
+body {
+  padding-top: 76px;
+}
+
+/* Keep close buttons above all modal content */
+.drawer-header {
+  position: relative !important;
+  z-index: 100000 !important;
+}
+
+.drawer-header button {
+  position: relative !important;
+  z-index: 100001 !important;
+}
+
+.modal-box,
+.product-details-box {
+  position: relative !important;
+}
+
+/* Admin X + Product Details X */
+.modal-close {
+  z-index: 100001 !important;
+}
+
+/* Cart X */
+.drawer-header button {
+  z-index: 100001 !important;
+}
+
+/* Make sure modal content cannot cover the X */
+.modal-close,
+.drawer-header button {
+  isolation: isolate;
+}
+@media (max-width: 800px) {
+  body {
+    padding-top: 120px;
+  }
+}
+
+@media (max-width: 520px) {
+  body {
+    padding-top: 120px;
+  }
+}
