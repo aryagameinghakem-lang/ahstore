@@ -290,32 +290,34 @@ box-shadow:
 0 0 18px rgba(0, 110, 255, 0.25);
 }
 
-/* ================= MOVING RGB FRAME ================= */
+/* ================= MOVING RGB OUTLINE ================= */
 
 .product-card::before {
 content: "";
 position: absolute;
 inset: -5px;
 border-radius: 14px;
-padding: 4px;
+padding: 5px;
 background: conic-gradient(
 from 0deg,
-#006eff 0deg,
-#00b7ff 25deg,
-#ffffff 35deg,
-#00b7ff 45deg,
-#006eff 70deg,
-transparent 90deg,
-transparent 180deg,
-#006eff 200deg,
-#00b7ff 225deg,
-#ffffff 235deg,
-#00b7ff 245deg,
-#006eff 270deg,
-transparent 290deg,
+transparent 0deg,
+transparent 35deg,
+#006eff 55deg,
+#00b7ff 70deg,
+#ffffff 78deg,
+#00b7ff 88deg,
+#006eff 105deg,
+transparent 125deg,
+transparent 215deg,
+#006eff 235deg,
+#00b7ff 250deg,
+#ffffff 258deg,
+#00b7ff 268deg,
+#006eff 285deg,
+transparent 305deg,
 transparent 360deg
 );
-animation: rgbAroundCard 1.8s linear infinite;
+animation: rgbAroundCard 2s linear infinite;
 
 -webkit-mask:
 linear-gradient(#fff 0 0) content-box,
@@ -328,28 +330,18 @@ pointer-events: none;
 z-index: 5;
 }
 
-/* Large bright moving RGB particles */
+/* Small particles moving along the RGB outline */
 .product-card::after {
 content: "";
 position: absolute;
-inset: -7px;
-border-radius: 16px;
-padding: 7px;
-background:
-radial-gradient(circle at 50% 0%, #ffffff 0%, #00b7ff 8%, transparent 18%),
-radial-gradient(circle at 100% 50%, #ffffff 0%, #006eff 8%, transparent 18%),
-radial-gradient(circle at 50% 100%, #ffffff 0%, #00b7ff 8%, transparent 18%),
-radial-gradient(circle at 0% 50%, #ffffff 0%, #006eff 8%, transparent 18%);
-animation: rgbParticles 2.2s linear infinite;
-filter: drop-shadow(0 0 6px #00b7ff) drop-shadow(0 0 12px #006eff);
-
--webkit-mask:
-linear-gradient(#fff 0 0) content-box,
-linear-gradient(#fff 0 0);
-
--webkit-mask-composite: xor;
-mask-composite: exclude;
-
+inset: -5px;
+border-radius: 14px;
+border: 3px dotted rgba(255, 255, 255, 0.9);
+box-shadow:
+0 0 5px #ffffff,
+0 0 10px #00b7ff,
+0 0 16px #006eff;
+animation: rgbParticles 1.2s linear infinite;
 pointer-events: none;
 z-index: 6;
 }
@@ -368,7 +360,7 @@ from {
 transform: rotate(0deg);
 }
 to {
-transform: rotate(360deg);
+transform: rotate(-360deg);
 }
 }
 
@@ -981,84 +973,22 @@ flex: 1;
 /* ================= ADMIN PRODUCT BUTTONS ================= */
 
 .admin-product-item button {
-padding: 9px 14px;
-border-radius: 6px;
-border: 1px solid rgba(255,255,255,0.08);
+padding: 10px 13px;
+border-radius: 5px;
+border: 0;
 cursor: pointer;
 font-size: 11px;
-font-weight: 800;
-letter-spacing: 0.4px;
-transition: 0.2s ease;
-}
-
-/* EDIT */
-
-.edit-product {
-background: linear-gradient(135deg, #087cff, #00b7ff);
+font-weight: 900;
+background: var(--blue);
 color: white;
-box-shadow: 0 0 10px rgba(0, 140, 255, 0.18);
+transition: 0.2s;
 }
 
-.edit-product:hover {
-background: linear-gradient(135deg, #168cff, #00c8ff);
-box-shadow:
-0 0 10px rgba(0, 145, 255, 0.45),
-0 0 20px rgba(0, 145, 255, 0.2);
+.admin-product-item button:hover {
+background: var(--blue2);
+box-shadow: 0 0 17px rgba(0, 145, 255, 0.3);
 transform: translateY(-1px);
 }
-
-/* DELETE */
-
-.delete-product {
-background: linear-gradient(135deg, #3a1111, #641818);
-color: #ffb0b0;
-border-color: rgba(255, 70, 70, 0.25);
-}
-
-.delete-product:hover {
-background: linear-gradient(135deg, #5a1515, #8a1f1f);
-color: white;
-box-shadow:
-0 0 10px rgba(255, 50, 50, 0.35),
-0 0 20px rgba(255, 50, 50, 0.15);
-transform: translateY(-1px);
-}
-
-/* MAKE SOLD */
-
-.sold-product {
-background: linear-gradient(135deg, #9b111e, #e00000);
-color: white;
-border-color: rgba(255, 70, 70, 0.35);
-box-shadow: 0 0 10px rgba(255, 0, 0, 0.15);
-}
-
-.sold-product:hover {
-background: linear-gradient(135deg, #c91524, #ff1e1e);
-box-shadow:
-0 0 10px rgba(255, 0, 0, 0.45),
-0 0 20px rgba(255, 0, 0, 0.2);
-transform: translateY(-1px);
-}
-
-/* MAKE AVAILABLE */
-
-.available-product {
-background: linear-gradient(135deg, #087c46, #0bbf68);
-color: white;
-border-color: rgba(0, 255, 130, 0.25);
-box-shadow: 0 0 10px rgba(0, 200, 100, 0.15);
-}
-
-.available-product:hover {
-background: linear-gradient(135deg, #0aa957, #12dc78);
-box-shadow:
-0 0 10px rgba(0, 220, 120, 0.4),
-0 0 20px rgba(0, 220, 120, 0.18);
-transform: translateY(-1px);
-}
-
-/* Button press effect */
 
 .admin-product-item button:active {
 transform: scale(0.96);
@@ -1334,151 +1264,151 @@ z-index: 999999 !important;
 z-index: 999999 !important;
 }
 /* =========================================
-   FIXED HEADER + MODAL CLOSE BUTTONS
-   ========================================= */
+FIXED HEADER + MODAL CLOSE BUTTONS
+========================================= */
 
 /* Header stays fixed while scrolling */
 .header {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
-  z-index: 5000 !important;
+position: fixed !important;
+top: 0 !important;
+left: 0 !important;
+right: 0 !important;
+width: 100% !important;
+z-index: 5000 !important;
 }
 
 /* Keep the page content below the fixed header */
 body {
-  padding-top: 76px;
+padding-top: 76px;
 }
 
 /* Keep close buttons above all modal content */
 .drawer-header {
-  position: relative !important;
-  z-index: 100000 !important;
+position: relative !important;
+z-index: 100000 !important;
 }
 
 .drawer-header button {
-  position: relative !important;
-  z-index: 100001 !important;
+position: relative !important;
+z-index: 100001 !important;
 }
 
 .modal-box,
 .product-details-box {
-  position: relative !important;
+position: relative !important;
 }
 
 /* Admin X + Product Details X */
 .modal-close {
-  z-index: 100001 !important;
+z-index: 100001 !important;
 }
 
 /* Cart X */
 .drawer-header button {
-  z-index: 100001 !important;
+z-index: 100001 !important;
 }
 
 /* Make sure modal content cannot cover the X */
 .modal-close,
 .drawer-header button {
-  isolation: isolate;
+isolation: isolate;
 }
 @media (max-width: 800px) {
-  body {
-    padding-top: 120px;
-  }
+body {
+padding-top: 120px;
+}
 }
 
 @media (max-width: 520px) {
-  body {
-    padding-top: 120px;
-  }
+body {
+padding-top: 120px;
+}
 }
 /* =========================================
-   FINAL FIX - MODALS ABOVE FIXED HEADER
-   ========================================= */
+FINAL FIX - MODALS ABOVE FIXED HEADER
+========================================= */
 
 .cart-drawer {
-  z-index: 200000 !important;
+z-index: 200000 !important;
 }
 
 #cartOverlay {
-  z-index: 199999 !important;
+z-index: 199999 !important;
 }
 
 .modal {
-  z-index: 200000 !important;
+z-index: 200000 !important;
 }
 
 .product-details-overlay {
-  z-index: 200000 !important;
+z-index: 200000 !important;
 }
 
 .drawer-header {
-  position: relative !important;
-  z-index: 200001 !important;
+position: relative !important;
+z-index: 200001 !important;
 }
 
 .drawer-header button {
-  position: relative !important;
-  z-index: 200002 !important;
+position: relative !important;
+z-index: 200002 !important;
 }
 
 .modal-box,
 .product-details-box {
-  position: relative !important;
+position: relative !important;
 }
 
 .modal-close {
-  position: absolute !important;
-  z-index: 200002 !important;
+position: absolute !important;
+z-index: 200002 !important;
 }
 /* =========================================
-   MOBILE FIX - STOP PAGE MOVING UNDER FINGER
-   ========================================= */
+MOBILE FIX - STOP PAGE MOVING UNDER FINGER
+========================================= */
 
 /* Prevent the main website from scrolling
-   while an overlay/drawer is open */
+while an overlay/drawer is open */
 body:has(.cart-drawer:not(.hidden)),
 body:has(.modal:not(.hidden)),
 body:has(.product-details-overlay:not(.hidden)) {
-  overflow: hidden !important;
-  overscroll-behavior: none !important;
+overflow: hidden !important;
+overscroll-behavior: none !important;
 }
 
 /* Keep the cart locked to the phone screen */
 .cart-drawer {
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  overscroll-behavior: contain !important;
+height: 100dvh !important;
+max-height: 100dvh !important;
+overscroll-behavior: contain !important;
 }
 
 /* Only the products inside the cart can scroll */
 #cartItems {
-  overflow-y: auto !important;
-  overscroll-behavior: contain !important;
-  -webkit-overflow-scrolling: touch;
+overflow-y: auto !important;
+overscroll-behavior: contain !important;
+-webkit-overflow-scrolling: touch;
 }
 
 /* Keep the bottom of the cart stable */
 .cart-bottom {
-  flex-shrink: 0 !important;
+flex-shrink: 0 !important;
 }
 
 /* Make WhatsApp button respond immediately to tapping */
 .whatsapp-btn {
-  touch-action: manipulation !important;
-  -webkit-tap-highlight-color: transparent;
+touch-action: manipulation !important;
+-webkit-tap-highlight-color: transparent;
 }
 
 /* Prevent buttons from causing weird mobile movement */
 button,
 a {
-  touch-action: manipulation;
+touch-action: manipulation;
 }
 
 /* Mobile browser stability */
 html,
 body {
-  overscroll-behavior-x: none;
+overscroll-behavior-x: none;
 }
