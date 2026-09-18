@@ -280,19 +280,82 @@ gap: 20px;
 position: relative;
 background:
 linear-gradient(145deg, rgba(18, 25, 36, 0.96), rgba(8, 11, 17, 0.98));
-border: 1px solid rgba(70, 135, 200, 0.15);
-border-radius: 9px;
+border: 2px solid rgba(0, 140, 255, 0.35);
+border-radius: 10px;
 overflow: hidden;
 transition: 0.3s ease;
 cursor: pointer;
+box-shadow:
+0 0 8px rgba(0, 140, 255, 0.45),
+0 0 18px rgba(0, 110, 255, 0.25);
+}
+
+.product-card::before {
+content: "";
+position: absolute;
+inset: -3px;
+border-radius: 12px;
+padding: 3px;
+background: conic-gradient(
+from 0deg,
+transparent 0deg,
+transparent 250deg,
+#006eff 275deg,
+#00b7ff 300deg,
+#ffffff 315deg,
+#00b7ff 330deg,
+#006eff 345deg,
+transparent 360deg
+);
+animation: rgbAroundCard 2.5s linear infinite;
+
+-webkit-mask:
+linear-gradient(#fff 0 0) content-box,
+linear-gradient(#fff 0 0);
+
+-webkit-mask-composite: xor;
+mask-composite: exclude;
+
+pointer-events: none;
+z-index: 5;
+}
+
+.product-card::after {
+content: "";
+position: absolute;
+inset: -8px;
+border-radius: 14px;
+background: conic-gradient(
+from 0deg,
+transparent 0deg,
+transparent 250deg,
+rgba(0, 110, 255, 0.05) 275deg,
+rgba(0, 183, 255, 0.35) 305deg,
+rgba(0, 110, 255, 0.05) 340deg,
+transparent 360deg
+);
+filter: blur(8px);
+animation: rgbAroundCard 2.5s linear infinite;
+pointer-events: none;
+z-index: 0;
+}
+
+@keyframes rgbAroundCard {
+from {
+transform: rotate(0deg);
+}
+to {
+transform: rotate(360deg);
+}
 }
 
 .product-card:hover {
 transform: translateY(-5px);
-border-color: rgba(0, 145, 255, 0.55);
+border-color: rgba(0, 145, 255, 0.7);
 box-shadow:
-0 12px 35px rgba(0, 0, 0, 0.35),
-0 0 25px rgba(0, 120, 255, 0.12);
+0 0 10px rgba(0, 150, 255, 0.8),
+0 0 25px rgba(0, 140, 255, 0.55),
+0 0 45px rgba(0, 110, 255, 0.35);
 }
 
 .product-image {
@@ -305,6 +368,7 @@ radial-gradient(circle, rgba(0, 125, 255, 0.09), transparent 65%),
 #090d14;
 overflow: hidden;
 position: relative;
+z-index: 2;
 }
 
 .product-image img {
@@ -329,9 +393,9 @@ letter-spacing: 2px;
 
 .product-sold {
 position: absolute;
-top: 30px;
-left: -45px;
-width: 190px;
+top: 12px;
+left: -58px;
+width: 205px;
 padding: 10px 0;
 background: red;
 color: white;
@@ -347,6 +411,8 @@ pointer-events: none;
 
 .product-info {
 padding: 17px;
+position: relative;
+z-index: 2;
 }
 
 .product-brand {
