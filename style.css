@@ -290,7 +290,7 @@ box-shadow:
 0 0 18px rgba(0, 110, 255, 0.25);
 }
 
-/* ================= MOVING RGB OUTLINE ================= */
+/* ================= MOVING RGB FRAME ================= */
 
 .product-card::before {
 content: "";
@@ -298,26 +298,17 @@ position: absolute;
 inset: -5px;
 border-radius: 14px;
 padding: 5px;
+
 background: conic-gradient(
 from 0deg,
-transparent 0deg,
-transparent 35deg,
-#006eff 55deg,
-#00b7ff 70deg,
-#ffffff 78deg,
-#00b7ff 88deg,
-#006eff 105deg,
-transparent 125deg,
-transparent 215deg,
-#006eff 235deg,
-#00b7ff 250deg,
-#ffffff 258deg,
-#00b7ff 268deg,
-#006eff 285deg,
-transparent 305deg,
-transparent 360deg
+#006eff 0deg,
+#006eff 230deg,
+#00b7ff 260deg,
+#ffffff 275deg,
+#00b7ff 290deg,
+#006eff 320deg,
+#006eff 360deg
 );
-animation: rgbAroundCard 2s linear infinite;
 
 -webkit-mask:
 linear-gradient(#fff 0 0) content-box,
@@ -326,27 +317,61 @@ linear-gradient(#fff 0 0);
 -webkit-mask-composite: xor;
 mask-composite: exclude;
 
+animation: rgbBorderTravel 2s linear infinite;
+
 pointer-events: none;
 z-index: 5;
 }
 
-/* Small particles moving along the RGB outline */
+/* Small particles traveling around the frame */
 .product-card::after {
 content: "";
 position: absolute;
 inset: -5px;
 border-radius: 14px;
-border: 3px dotted rgba(255, 255, 255, 0.9);
-box-shadow:
-0 0 5px #ffffff,
-0 0 10px #00b7ff,
-0 0 16px #006eff;
-animation: rgbParticles 1.2s linear infinite;
+padding: 2px;
+
+background: conic-gradient(
+from 0deg,
+transparent 0deg,
+transparent 45deg,
+#ffffff 48deg,
+#00b7ff 50deg,
+transparent 53deg,
+transparent 130deg,
+#ffffff 133deg,
+#00b7ff 135deg,
+transparent 138deg,
+transparent 220deg,
+#ffffff 223deg,
+#00b7ff 225deg,
+transparent 228deg,
+transparent 310deg,
+#ffffff 313deg,
+#00b7ff 315deg,
+transparent 318deg,
+transparent 360deg
+);
+
+-webkit-mask:
+linear-gradient(#fff 0 0) content-box,
+linear-gradient(#fff 0 0);
+
+-webkit-mask-composite: xor;
+mask-composite: exclude;
+
+filter:
+drop-shadow(0 0 4px #ffffff)
+drop-shadow(0 0 8px #00b7ff)
+drop-shadow(0 0 12px #006eff);
+
+animation: rgbParticleTravel 1.3s linear infinite;
+
 pointer-events: none;
 z-index: 6;
 }
 
-@keyframes rgbAroundCard {
+@keyframes rgbBorderTravel {
 from {
 transform: rotate(0deg);
 }
@@ -355,12 +380,12 @@ transform: rotate(360deg);
 }
 }
 
-@keyframes rgbParticles {
+@keyframes rgbParticleTravel {
 from {
 transform: rotate(0deg);
 }
 to {
-transform: rotate(-360deg);
+transform: rotate(360deg);
 }
 }
 
