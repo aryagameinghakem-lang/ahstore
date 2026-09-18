@@ -1,3 +1,4 @@
+```css
 * {
   margin: 0;
   padding: 0;
@@ -290,7 +291,13 @@ box-shadow:
 0 0 18px rgba(0, 110, 255, 0.25);
 }
 
-/* ================= MOVING RGB FRAME ================= */
+/* ================= MOVING RGB OUTLINE ================= */
+
+@property --rgb-angle {
+syntax: "<angle>";
+initial-value: 0deg;
+inherits: false;
+}
 
 .product-card::before {
 content: "";
@@ -300,11 +307,11 @@ border-radius: 14px;
 padding: 5px;
 
 background: conic-gradient(
-from 0deg,
+from var(--rgb-angle),
 #006eff 0deg,
-#006eff 230deg,
-#00b7ff 260deg,
-#ffffff 275deg,
+#006eff 220deg,
+#00b7ff 250deg,
+#ffffff 270deg,
 #00b7ff 290deg,
 #006eff 320deg,
 #006eff 360deg
@@ -317,39 +324,26 @@ linear-gradient(#fff 0 0);
 -webkit-mask-composite: xor;
 mask-composite: exclude;
 
-animation: rgbBorderTravel 2s linear infinite;
+animation: rgbOutlineMove 2.2s linear infinite;
 
 pointer-events: none;
 z-index: 5;
 }
 
-/* Small particles traveling around the frame */
 .product-card::after {
 content: "";
 position: absolute;
 inset: -5px;
 border-radius: 14px;
-padding: 2px;
+padding: 4px;
 
 background: conic-gradient(
-from 0deg,
+from var(--rgb-angle),
 transparent 0deg,
-transparent 45deg,
-#ffffff 48deg,
-#00b7ff 50deg,
-transparent 53deg,
-transparent 130deg,
-#ffffff 133deg,
-#00b7ff 135deg,
-transparent 138deg,
-transparent 220deg,
-#ffffff 223deg,
-#00b7ff 225deg,
-transparent 228deg,
-transparent 310deg,
-#ffffff 313deg,
-#00b7ff 315deg,
-transparent 318deg,
+transparent 245deg,
+rgba(255,255,255,0.9) 265deg,
+rgba(0,183,255,0.9) 280deg,
+transparent 300deg,
 transparent 360deg
 );
 
@@ -365,27 +359,18 @@ drop-shadow(0 0 4px #ffffff)
 drop-shadow(0 0 8px #00b7ff)
 drop-shadow(0 0 12px #006eff);
 
-animation: rgbParticleTravel 1.3s linear infinite;
+animation: rgbOutlineMove 2.2s linear infinite;
 
 pointer-events: none;
 z-index: 6;
 }
 
-@keyframes rgbBorderTravel {
+@keyframes rgbOutlineMove {
 from {
-transform: rotate(0deg);
+--rgb-angle: 0deg;
 }
 to {
-transform: rotate(360deg);
-}
-}
-
-@keyframes rgbParticleTravel {
-from {
-transform: rotate(0deg);
-}
-to {
-transform: rotate(360deg);
+--rgb-angle: 360deg;
 }
 }
 
@@ -1437,3 +1422,4 @@ html,
 body {
 overscroll-behavior-x: none;
 }
+```
