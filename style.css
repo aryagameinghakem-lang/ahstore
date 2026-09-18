@@ -1216,3 +1216,42 @@ body {
     padding-top: 120px;
   }
 }
+/* =========================================
+   FINAL FIX - MODALS ABOVE FIXED HEADER
+   ========================================= */
+
+.cart-drawer {
+  z-index: 200000 !important;
+}
+
+#cartOverlay {
+  z-index: 199999 !important;
+}
+
+.modal {
+  z-index: 200000 !important;
+}
+
+.product-details-overlay {
+  z-index: 200000 !important;
+}
+
+.drawer-header {
+  position: relative !important;
+  z-index: 200001 !important;
+}
+
+.drawer-header button {
+  position: relative !important;
+  z-index: 200002 !important;
+}
+
+.modal-box,
+.product-details-box {
+  position: relative !important;
+}
+
+.modal-close {
+  position: absolute !important;
+  z-index: 200002 !important;
+}
