@@ -1255,3 +1255,52 @@ body {
   position: absolute !important;
   z-index: 200002 !important;
 }
+/* =========================================
+   MOBILE FIX - STOP PAGE MOVING UNDER FINGER
+   ========================================= */
+
+/* Prevent the main website from scrolling
+   while an overlay/drawer is open */
+body:has(.cart-drawer:not(.hidden)),
+body:has(.modal:not(.hidden)),
+body:has(.product-details-overlay:not(.hidden)) {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+/* Keep the cart locked to the phone screen */
+.cart-drawer {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overscroll-behavior: contain !important;
+}
+
+/* Only the products inside the cart can scroll */
+#cartItems {
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Keep the bottom of the cart stable */
+.cart-bottom {
+  flex-shrink: 0 !important;
+}
+
+/* Make WhatsApp button respond immediately to tapping */
+.whatsapp-btn {
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent buttons from causing weird mobile movement */
+button,
+a {
+  touch-action: manipulation;
+}
+
+/* Mobile browser stability */
+html,
+body {
+  overscroll-behavior-x: none;
+}
