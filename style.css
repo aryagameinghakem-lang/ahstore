@@ -290,24 +290,32 @@ box-shadow:
 0 0 18px rgba(0, 110, 255, 0.25);
 }
 
+/* ================= MOVING RGB FRAME ================= */
+
 .product-card::before {
 content: "";
 position: absolute;
-inset: -3px;
-border-radius: 12px;
-padding: 3px;
+inset: -5px;
+border-radius: 14px;
+padding: 4px;
 background: conic-gradient(
 from 0deg,
-transparent 0deg,
-transparent 250deg,
-#006eff 275deg,
-#00b7ff 300deg,
-#ffffff 315deg,
-#00b7ff 330deg,
-#006eff 345deg,
+#006eff 0deg,
+#00b7ff 25deg,
+#ffffff 35deg,
+#00b7ff 45deg,
+#006eff 70deg,
+transparent 90deg,
+transparent 180deg,
+#006eff 200deg,
+#00b7ff 225deg,
+#ffffff 235deg,
+#00b7ff 245deg,
+#006eff 270deg,
+transparent 290deg,
 transparent 360deg
 );
-animation: rgbAroundCard 2.5s linear infinite;
+animation: rgbAroundCard 1.8s linear infinite;
 
 -webkit-mask:
 linear-gradient(#fff 0 0) content-box,
@@ -320,27 +328,42 @@ pointer-events: none;
 z-index: 5;
 }
 
+/* Large bright moving RGB particles */
 .product-card::after {
 content: "";
 position: absolute;
-inset: -8px;
-border-radius: 14px;
-background: conic-gradient(
-from 0deg,
-transparent 0deg,
-transparent 250deg,
-rgba(0, 110, 255, 0.05) 275deg,
-rgba(0, 183, 255, 0.35) 305deg,
-rgba(0, 110, 255, 0.05) 340deg,
-transparent 360deg
-);
-filter: blur(8px);
-animation: rgbAroundCard 2.5s linear infinite;
+inset: -7px;
+border-radius: 16px;
+padding: 7px;
+background:
+radial-gradient(circle at 50% 0%, #ffffff 0%, #00b7ff 8%, transparent 18%),
+radial-gradient(circle at 100% 50%, #ffffff 0%, #006eff 8%, transparent 18%),
+radial-gradient(circle at 50% 100%, #ffffff 0%, #00b7ff 8%, transparent 18%),
+radial-gradient(circle at 0% 50%, #ffffff 0%, #006eff 8%, transparent 18%);
+animation: rgbParticles 2.2s linear infinite;
+filter: drop-shadow(0 0 6px #00b7ff) drop-shadow(0 0 12px #006eff);
+
+-webkit-mask:
+linear-gradient(#fff 0 0) content-box,
+linear-gradient(#fff 0 0);
+
+-webkit-mask-composite: xor;
+mask-composite: exclude;
+
 pointer-events: none;
-z-index: 0;
+z-index: 6;
 }
 
 @keyframes rgbAroundCard {
+from {
+transform: rotate(0deg);
+}
+to {
+transform: rotate(360deg);
+}
+}
+
+@keyframes rgbParticles {
 from {
 transform: rotate(0deg);
 }
@@ -955,22 +978,90 @@ object-fit: contain;
 flex: 1;
 }
 
+/* ================= ADMIN PRODUCT BUTTONS ================= */
+
 .admin-product-item button {
-padding: 7px 9px;
-border-radius: 4px;
-border: 0;
+padding: 9px 14px;
+border-radius: 6px;
+border: 1px solid rgba(255,255,255,0.08);
 cursor: pointer;
 font-size: 11px;
+font-weight: 800;
+letter-spacing: 0.4px;
+transition: 0.2s ease;
 }
+
+/* EDIT */
 
 .edit-product {
-background: #123456;
+background: linear-gradient(135deg, #087cff, #00b7ff);
 color: white;
+box-shadow: 0 0 10px rgba(0, 140, 255, 0.18);
 }
 
+.edit-product:hover {
+background: linear-gradient(135deg, #168cff, #00c8ff);
+box-shadow:
+0 0 10px rgba(0, 145, 255, 0.45),
+0 0 20px rgba(0, 145, 255, 0.2);
+transform: translateY(-1px);
+}
+
+/* DELETE */
+
 .delete-product {
-background: #3a1717;
-color: #ff9b9b;
+background: linear-gradient(135deg, #3a1111, #641818);
+color: #ffb0b0;
+border-color: rgba(255, 70, 70, 0.25);
+}
+
+.delete-product:hover {
+background: linear-gradient(135deg, #5a1515, #8a1f1f);
+color: white;
+box-shadow:
+0 0 10px rgba(255, 50, 50, 0.35),
+0 0 20px rgba(255, 50, 50, 0.15);
+transform: translateY(-1px);
+}
+
+/* MAKE SOLD */
+
+.sold-product {
+background: linear-gradient(135deg, #9b111e, #e00000);
+color: white;
+border-color: rgba(255, 70, 70, 0.35);
+box-shadow: 0 0 10px rgba(255, 0, 0, 0.15);
+}
+
+.sold-product:hover {
+background: linear-gradient(135deg, #c91524, #ff1e1e);
+box-shadow:
+0 0 10px rgba(255, 0, 0, 0.45),
+0 0 20px rgba(255, 0, 0, 0.2);
+transform: translateY(-1px);
+}
+
+/* MAKE AVAILABLE */
+
+.available-product {
+background: linear-gradient(135deg, #087c46, #0bbf68);
+color: white;
+border-color: rgba(0, 255, 130, 0.25);
+box-shadow: 0 0 10px rgba(0, 200, 100, 0.15);
+}
+
+.available-product:hover {
+background: linear-gradient(135deg, #0aa957, #12dc78);
+box-shadow:
+0 0 10px rgba(0, 220, 120, 0.4),
+0 0 20px rgba(0, 220, 120, 0.18);
+transform: translateY(-1px);
+}
+
+/* Button press effect */
+
+.admin-product-item button:active {
+transform: scale(0.96);
 }
 
 /* ================= LOADING ================= */
