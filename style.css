@@ -337,7 +337,9 @@ inset: -5px;
 border-radius: 14px;
 padding: 4px;
 
-background: conic-gradient(
+background:
+radial-gradient(circle, #ffffff 0 2px, transparent 3px),
+conic-gradient(
 from var(--rgb-angle),
 transparent 0deg,
 transparent 245deg,
@@ -346,6 +348,9 @@ rgba(0,183,255,0.9) 280deg,
 transparent 300deg,
 transparent 360deg
 );
+
+background-size: 18px 18px, 100% 100%;
+background-position: 0 0, 0 0;
 
 -webkit-mask:
 linear-gradient(#fff 0 0) content-box,
@@ -359,7 +364,9 @@ drop-shadow(0 0 4px #ffffff)
 drop-shadow(0 0 8px #00b7ff)
 drop-shadow(0 0 12px #006eff);
 
-animation: rgbOutlineMove 2.2s linear infinite;
+animation:
+rgbOutlineMove 2.2s linear infinite,
+particleMove 0.7s linear infinite;
 
 pointer-events: none;
 z-index: 6;
@@ -371,6 +378,15 @@ from {
 }
 to {
 --rgb-angle: 360deg;
+}
+}
+
+@keyframes particleMove {
+from {
+background-position: 0 0, 0 0;
+}
+to {
+background-position: 18px 18px, 0 0;
 }
 }
 
