@@ -1,3 +1,4 @@
+```javascript
 const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
 const WHATSAPP = "9647701068935";
@@ -1262,6 +1263,10 @@ const connection =
 $("productConnection")
 ?.value;
 
+const condition =
+$("productCondition")
+?.value;
+
 const switchType =
 $("productSwitch")
 ?.value.trim();
@@ -1377,6 +1382,8 @@ price_iqd:
 priceIQD,
 
 connection,
+
+condition,
 
 switch_type:
 category === "keyboard"
@@ -1555,9 +1562,7 @@ product.id
 );
 
 const sold =
-document.createElement(
-"button"
-);
+document.createElement("button");
 
 sold.type = "button";
 
@@ -1680,6 +1685,10 @@ product.price_iqd ?? "";
 $("productConnection").value =
 product.connection ||
 "Wired";
+
+$("productCondition").value =
+product.condition ||
+"New";
 
 $("productSwitch").value =
 product.switch_type || "";
@@ -1870,3 +1879,4 @@ openProductDetails;
 
 window.closeProductDetails =
 closeProductDetails;
+```
