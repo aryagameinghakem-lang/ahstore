@@ -59,6 +59,16 @@ $("categoryFilter")?.addEventListener(
 filterProducts
 );
 
+$("connectionFilter")?.addEventListener(
+"change",
+filterProducts
+);
+
+$("conditionFilter")?.addEventListener(
+"change",
+filterProducts
+);
+
 $("loginForm")?.addEventListener(
 "submit",
 loginAdmin
@@ -109,6 +119,13 @@ $("detailsAddCart")?.addEventListener(
 "click",
 () => {
 if (selectedProductId !== null) {
+const product =
+findProduct(selectedProductId);
+
+if (product?.sold) {
+return;
+}
+
 addToCart(selectedProductId);
 closeProductDetails();
 }
@@ -211,6 +228,27 @@ noImage.textContent = "AHSTORE";
 imageArea.appendChild(noImage);
 }
 
+/* =========================
+SOLD LABEL
+========================= */
+
+if (product.sold) {
+const soldLabel =
+document.createElement("div");
+
+soldLabel.className =
+"product-sold";
+
+soldLabel.textContent =
+language === "ku"
+? "فرۆشراوە"
+: "SOLD";
+
+imageArea.appendChild(
+soldLabel
+);
+}
+
 const info =
 document.createElement("div");
 
@@ -303,6 +341,8 @@ price.appendChild(iqd);
 
 info.appendChild(price);
 
+if (!product.sold) {
+
 const addButton =
 document.createElement("button");
 
@@ -325,6 +365,29 @@ addToCart(product.id);
 );
 
 info.appendChild(addButton);
+
+} else {
+
+const soldButton =
+document.createElement("button");
+
+soldButton.className =
+"add-cart";
+
+soldButton.type = "button";
+
+soldButton.disabled = true;
+
+soldButton.textContent =
+language === "ku"
+? "فرۆشراوە"
+: "SOLD";
+
+info.appendChild(
+soldButton
+);
+
+}
 
 card.appendChild(imageArea);
 card.appendChild(info);
@@ -383,6 +446,12 @@ $("searchInput")?.value || ""
 const category =
 $("categoryFilter")?.value || "all";
 
+const connection =
+$("connectionFilter")?.value || "all";
+
+const condition =
+$("conditionFilter")?.value || "all";
+
 const filtered =
 products.filter((product) => {
 const text = `         ${product.name || ""}
@@ -401,9 +470,23 @@ String(product.category || "")
 .toLowerCase() ===
 category.toLowerCase();
 
+const connectionMatch =
+connection === "all" ||
+String(product.connection || "")
+.toLowerCase() ===
+connection.toLowerCase();
+
+const conditionMatch =
+condition === "all" ||
+String(product.condition || "")
+.toLowerCase() ===
+condition.toLowerCase();
+
 return (
 searchMatch &&
-categoryMatch
+categoryMatch &&
+connectionMatch &&
+conditionMatch
 );
 });
 
@@ -530,10 +613,29 @@ $("detailsIQD").textContent =
 }
 
 if ($("detailsAddCart")) {
+
+if (product.sold) {
+
+$("detailsAddCart").textContent =
+language === "ku"
+? "فرۆشراوە"
+: "SOLD";
+
+$("detailsAddCart").disabled =
+true;
+
+} else {
+
 $("detailsAddCart").textContent =
 language === "ku"
 ? "زیادکردن بۆ سەبەت"
 : "ADD TO CART";
+
+$("detailsAddCart").disabled =
+false;
+
+}
+
 }
 
 overlay.classList.remove(
@@ -572,6 +674,16 @@ if (!product) {
 console.error(
 "Product not found:",
 id
+);
+
+return;
+}
+
+if (product.sold) {
+alert(
+language === "ku"
+? "ئەم بەرهەمە فرۆشراوە."
+: "This product is sold."
 );
 
 return;
@@ -966,6 +1078,14 @@ const category =
 $("categoryFilter")?.value ||
 "all";
 
+const connection =
+$("connectionFilter")?.value ||
+"all";
+
+const condition =
+$("conditionFilter")?.value ||
+"all";
+
 return products.filter(
 (product) => {
 const text = `         ${product.name || ""}
@@ -984,9 +1104,23 @@ String(product.category || "")
 .toLowerCase() ===
 category.toLowerCase();
 
+const connectionMatch =
+connection === "all" ||
+String(product.connection || "")
+.toLowerCase() ===
+connection.toLowerCase();
+
+const conditionMatch =
+condition === "all" ||
+String(product.condition || "")
+.toLowerCase() ===
+condition.toLowerCase();
+
 return (
 searchMatch &&
-categoryMatch
+categoryMatch &&
+connectionMatch &&
+conditionMatch
 );
 }
 );
@@ -1383,6 +1517,23 @@ price.textContent =
 info.appendChild(name);
 info.appendChild(price);
 
+/* =========================
+SOLD STATUS
+========================= */
+
+const status =
+document.createElement("small");
+
+status.textContent =
+product.sold
+? "SOLD"
+: "AVAILABLE";
+
+status.style.display =
+"block";
+
+info.appendChild(status);
+
 const actions =
 document.createElement("div");
 
@@ -1398,6 +1549,27 @@ edit.addEventListener(
 "click",
 () => {
 editProduct(
+product.id
+);
+}
+);
+
+const sold =
+document.createElement(
+"button"
+);
+
+sold.type = "button";
+
+sold.textContent =
+product.sold
+? "MARK AVAILABLE"
+: "MARK SOLD";
+
+sold.addEventListener(
+"click",
+() => {
+toggleSold(
 product.id
 );
 }
@@ -1422,6 +1594,7 @@ product.id
 );
 
 actions.appendChild(edit);
+actions.appendChild(sold);
 actions.appendChild(remove);
 
 item.appendChild(info);
@@ -1430,6 +1603,50 @@ item.appendChild(actions);
 container.appendChild(item);
 
 });
+}
+
+/* =========================
+TOGGLE SOLD
+========================= */
+
+async function toggleSold(id) {
+const product =
+findProduct(id);
+
+if (!product) return;
+
+const newStatus =
+!Boolean(product.sold);
+
+const { error } =
+await db
+.from("products")
+.update({
+sold: newStatus
+})
+.eq(
+"id",
+product.id
+);
+
+if (error) {
+alert(
+"Could not change sold status: " +
+error.message
+);
+
+return;
+}
+
+product.sold =
+newStatus;
+
+renderProducts(
+getFilteredProducts()
+);
+
+renderAdminProducts();
+
 }
 
 /* =========================
