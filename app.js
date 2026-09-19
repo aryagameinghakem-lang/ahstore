@@ -1,11 +1,10 @@
-```javascript
 const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
 const WHATSAPP = "9647701068935";
 
 const db = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
 
 let products = [];
@@ -14,152 +13,187 @@ let language = localStorage.getItem("ahstore_language") || "en";
 let editingId = null;
 let selectedProductId = null;
 
-const $ = (id) => document.getElementById(id);
-
 /* =========================
-START
+HELPER
 ========================= */
 
-document.addEventListener("DOMContentLoaded", () => {
-setupButtons();
-applyLanguage();
-updateSwitchField();
-renderCart();
-closeCart();
-closeProductDetails();
-loadProducts();
-checkAuth();
-startProductsHeadingRotation();
-});
+const $ = (id) => document.getElementById(id);
 
 /* =========================
 PRODUCTS HEADING ROTATION
 ========================= */
 
 function startProductsHeadingRotation() {
-const heading = $("productsHeading");
+  const heading = $("productsHeading");
 
-if (!heading) return;
+  if (!heading) return;
 
-const headingTexts = [
-"GAMING PRODUCTS",
-"ELECTRONIC PRODUCTS",
-"YOUR DESIRED PRODUCTS"
-];
+  const headingTexts = {
+    en: [
+      "GAMING PRODUCTS",
+      "ELECTRONIC PRODUCTS",
+      "YOUR DESIRED PRODUCTS"
+    ],
+    ku: [
+      "بەرهەمەکانی گەیمینگ",
+      "بەرهەمە ئەلیکترۆنییەکان",
+      "بەرهەمە خواستراوەکانت"
+    ]
+  };
 
-let headingIndex = 0;
+  let headingIndex = 0;
 
-heading.textContent =
-headingTexts[headingIndex];
+  function updateHeading() {
+    heading.textContent =
+      headingTexts[language]?.[headingIndex] ||
+      headingTexts.en[headingIndex];
+  }
 
-setInterval(() => {
+  updateHeading();
 
-headingIndex =
-(headingIndex + 1) %
-headingTexts.length;
+  setInterval(() => {
+    headingIndex =
+      (headingIndex + 1) %
+      headingTexts[language].length;
 
-heading.textContent =
-headingTexts[headingIndex];
-
-}, 4000);
+    updateHeading();
+  }, 4000);
 }
+
+/* =========================
+START
+========================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+  setupButtons();
+  applyLanguage();
+  updateSwitchField();
+  renderCart();
+  closeCart();
+  closeProductDetails();
+  startProductsHeadingRotation();
+  loadProducts();
+  checkAuth();
+});
 
 /* =========================
 BUTTONS
 ========================= */
 
 function setupButtons() {
-$("languageBtn")?.addEventListener("click", toggleLanguage);
+  $("languageBtn")?.addEventListener(
+    "click",
+    toggleLanguage
+  );
 
-$("cartBtn")?.addEventListener("click", openCart);
-$("closeCart")?.addEventListener("click", closeCart);
-$("cartOverlay")?.addEventListener("click", closeCart);
+  $("cartBtn")?.addEventListener(
+    "click",
+    openCart
+  );
 
-$("adminBtn")?.addEventListener("click", openAdmin);
-$("closeAdmin")?.addEventListener("click", closeAdmin);
+  $("closeCart")?.addEventListener(
+    "click",
+    closeCart
+  );
 
-$("whatsappOrder")?.addEventListener(
-"click",
-checkoutWhatsApp
-);
+  $("cartOverlay")?.addEventListener(
+    "click",
+    closeCart
+  );
 
-$("searchInput")?.addEventListener(
-"input",
-filterProducts
-);
+  $("adminBtn")?.addEventListener(
+    "click",
+    openAdmin
+  );
 
-$("connectionFilter")?.addEventListener(
-"change",
-filterProducts
-);
+  $("closeAdmin")?.addEventListener(
+    "click",
+    closeAdmin
+  );
 
-$("conditionFilter")?.addEventListener(
-"change",
-filterProducts
-);
+  $("whatsappOrder")?.addEventListener(
+    "click",
+    checkoutWhatsApp
+  );
 
-$("loginForm")?.addEventListener(
-"submit",
-loginAdmin
-);
+  $("searchInput")?.addEventListener(
+    "input",
+    filterProducts
+  );
 
-$("logoutBtn")?.addEventListener(
-"click",
-logoutAdmin
-);
+  $("connectionFilter")?.addEventListener(
+    "change",
+    filterProducts
+  );
 
-$("productForm")?.addEventListener(
-"submit",
-saveProduct
-);
+  $("conditionFilter")?.addEventListener(
+    "change",
+    filterProducts
+  );
 
-$("cancelEditBtn")?.addEventListener(
-"click",
-cancelEdit
-);
+  $("loginForm")?.addEventListener(
+    "submit",
+    loginAdmin
+  );
 
-$("productCategory")?.addEventListener(
-"change",
-updateSwitchField
-);
+  $("logoutBtn")?.addEventListener(
+    "click",
+    logoutAdmin
+  );
 
-$("productImage")?.addEventListener(
-"change",
-previewImage
-);
+  $("productForm")?.addEventListener(
+    "submit",
+    saveProduct
+  );
 
-$("closeProductDetails")?.addEventListener(
-"click",
-closeProductDetails
-);
+  $("cancelEditBtn")?.addEventListener(
+    "click",
+    cancelEdit
+  );
 
-$("productDetailsOverlay")?.addEventListener(
-"click",
-(event) => {
-if (
-event.target === $("productDetailsOverlay")
-) {
-closeProductDetails();
-}
-}
-);
+  $("productCategory")?.addEventListener(
+    "change",
+    updateSwitchField
+  );
 
-$("detailsAddCart")?.addEventListener(
-"click",
-() => {
-if (selectedProductId !== null) {
-const product =
-findProduct(selectedProductId);
+  $("productImage")?.addEventListener(
+    "change",
+    previewImage
+  );
 
-if (product?.sold) {
-return;
-}
+  $("closeProductDetails")?.addEventListener(
+    "click",
+    closeProductDetails
+  );
 
-addToCart(selectedProductId);
-closeProductDetails();
-}
-}
-);
+  $("productDetailsOverlay")?.addEventListener(
+    "click",
+    (event) => {
+      if (
+        event.target ===
+        $("productDetailsOverlay")
+      ) {
+        closeProductDetails();
+      }
+    }
+  );
+
+  $("detailsAddCart")?.addEventListener(
+    "click",
+    () => {
+      if (selectedProductId !== null) {
+        const product =
+          findProduct(selectedProductId);
+
+        if (product?.sold) {
+          return;
+        }
+
+        addToCart(selectedProductId);
+        closeProductDetails();
+      }
+    }
+  );
 }
 
 /* =========================
@@ -167,43 +201,50 @@ PRODUCTS
 ========================= */
 
 async function loadProducts() {
-const container = $("productsGrid");
+  const container =
+    $("productsGrid");
 
-if (container) {
-container.innerHTML =
-`<div class="loading">No products yet.</div>`;
-}
+  if (container) {
+    container.innerHTML =
+      `<div class="loading">No products yet.</div>`;
+  }
 
-const { data, error } = await db
-.from("products")
-.select("*")
-.order("created_at", {
-ascending: false
-});
+  const { data, error } =
+    await db
+      .from("products")
+      .select("*")
+      .order("created_at", {
+        ascending: false
+      });
 
-if (error) {
-console.error("Products error:", error);
+  if (error) {
+    console.error(
+      "Products error:",
+      error
+    );
 
-if (container) {
-container.innerHTML =
-`<div class="loading">
-Unable to load products.
+    if (container) {
+      container.innerHTML =
+        `<div class="loading">
+          Unable to load products.
+        </div>`;
+    }
 
-</div>`;
-}
+    return;
+  }
 
-return;
-}
+  products = data || [];
 
-products = data || [];
+  console.log(
+    "Products loaded:",
+    products
+  );
 
-console.log(
-"Products loaded:",
-products
-);
+  renderProducts(
+    getFilteredProducts()
+  );
 
-renderProducts(products);
-renderAdminProducts();
+  renderAdminProducts();
 }
 
 /* =========================
@@ -211,226 +252,263 @@ PRODUCT DISPLAY
 ========================= */
 
 function renderProducts(list) {
-const container = $("productsGrid");
+  const container =
+    $("productsGrid");
 
-if (!container) return;
+  if (!container) return;
 
-if (!list || !list.length) {
-container.innerHTML =
-`<div class="loading">
+  if (!list || !list.length) {
+    container.innerHTML =
+      `<div class="loading">
         ${
           language === "ku"
             ? "هیچ بەرهەمێک نییە."
             : "No products yet."
-        }       </div>`;
+        }
+      </div>`;
 
-return;
-}
+    return;
+  }
 
-container.innerHTML = "";
+  container.innerHTML = "";
 
-list.forEach((product) => {
-const card = document.createElement("div");
+  list.forEach((product) => {
+    const card =
+      document.createElement("div");
 
-card.className = "product-card";
+    card.className =
+      "product-card";
 
-const imageArea =
-document.createElement("div");
+    const imageArea =
+      document.createElement("div");
 
-imageArea.className = "product-image";
+    imageArea.className =
+      "product-image";
 
-if (product.image_url) {
-const img =
-document.createElement("img");
+    if (product.image_url) {
+      const img =
+        document.createElement("img");
 
-img.src = product.image_url;
-img.alt = product.name || "Product";
+      img.src =
+        product.image_url;
 
-imageArea.appendChild(img);
-} else {
-const noImage =
-document.createElement("div");
+      img.alt =
+        product.name || "Product";
 
-noImage.className = "no-image";
-noImage.textContent = "AHSTORE";
+      imageArea.appendChild(img);
 
-imageArea.appendChild(noImage);
-}
+    } else {
+      const noImage =
+        document.createElement("div");
 
-/* =========================
-SOLD LABEL
-========================= */
+      noImage.className =
+        "no-image";
 
-if (product.sold) {
-const soldLabel =
-document.createElement("div");
+      noImage.textContent =
+        "AHSTORE";
 
-soldLabel.className =
-"product-sold";
+      imageArea.appendChild(
+        noImage
+      );
+    }
 
-soldLabel.textContent =
-language === "ku"
-? "فرۆشراوە"
-: "SOLD";
+    /* =========================
+    SOLD LABEL
+    ========================= */
 
-imageArea.appendChild(
-soldLabel
-);
-}
+    if (product.sold) {
+      const soldLabel =
+        document.createElement("div");
 
-const info =
-document.createElement("div");
+      soldLabel.className =
+        "product-sold";
 
-info.className = "product-info";
+      soldLabel.textContent =
+        language === "ku"
+          ? "فرۆشراوە"
+          : "SOLD";
 
-const brand =
-document.createElement("div");
+      imageArea.appendChild(
+        soldLabel
+      );
+    }
 
-brand.className = "product-brand";
-brand.textContent =
-product.brand || "";
+    const info =
+      document.createElement("div");
 
-const name =
-document.createElement("h3");
+    info.className =
+      "product-info";
 
-name.textContent =
-product.name || "";
+    const brand =
+      document.createElement("div");
 
-const meta =
-document.createElement("div");
+    brand.className =
+      "product-brand";
 
-meta.className = "product-meta";
+    brand.textContent =
+      product.brand || "";
 
-const category =
-document.createElement("span");
+    const name =
+      document.createElement("h3");
 
-category.textContent =
-formatCategory(product.category);
+    name.textContent =
+      product.name || "";
 
-meta.appendChild(category);
+    const meta =
+      document.createElement("div");
 
-if (product.connection) {
-const connection =
-document.createElement("span");
+    meta.className =
+      "product-meta";
 
-connection.textContent =
-product.connection;
+    const category =
+      document.createElement("span");
 
-meta.appendChild(connection);
-}
+    category.textContent =
+      formatCategory(
+        product.category
+      );
 
-info.appendChild(brand);
-info.appendChild(name);
-info.appendChild(meta);
+    meta.appendChild(category);
 
-if (
-product.switch_type &&
-String(product.category)
-.toLowerCase() === "keyboard"
-) {
-const switchType =
-document.createElement("div");
+    if (product.connection) {
+      const connection =
+        document.createElement("span");
 
-switchType.className =
-"switch-type";
+      connection.textContent =
+        product.connection;
 
-switchType.textContent =
-`${
-      language === "ku"
-        ? "سویچە"
-        : "Switch"
-    }: ${product.switch_type}`;
+      meta.appendChild(
+        connection
+      );
+    }
 
-info.appendChild(switchType);
-}
+    info.appendChild(brand);
+    info.appendChild(name);
+    info.appendChild(meta);
 
-const price =
-document.createElement("div");
+    if (
+      product.switch_type &&
+      String(product.category)
+        .toLowerCase() ===
+        "keyboard"
+    ) {
+      const switchType =
+        document.createElement("div");
 
-price.className = "price";
+      switchType.className =
+        "switch-type";
 
-const usd =
-document.createElement("span");
+      switchType.textContent =
+        `${
+          language === "ku"
+            ? "سویچە"
+            : "Switch"
+        }: ${product.switch_type}`;
 
-usd.textContent =
-`$${Number(
-  product.price_usd || 0
-).toFixed(2)}`;
+      info.appendChild(
+        switchType
+      );
+    }
 
-const iqd =
-document.createElement("small");
+    const price =
+      document.createElement("div");
 
-iqd.textContent =
-`${Number(
-  product.price_iqd || 0
-).toLocaleString()} IQD`;
+    price.className =
+      "price";
 
-price.appendChild(usd);
-price.appendChild(iqd);
+    const usd =
+      document.createElement("span");
 
-info.appendChild(price);
+    usd.textContent =
+      `$${Number(
+        product.price_usd || 0
+      ).toFixed(2)}`;
 
-if (!product.sold) {
+    const iqd =
+      document.createElement("small");
 
-const addButton =
-document.createElement("button");
+    iqd.textContent =
+      `${Number(
+        product.price_iqd || 0
+      ).toLocaleString()} IQD`;
 
-addButton.className = "add-cart";
+    price.appendChild(usd);
+    price.appendChild(iqd);
 
-addButton.type = "button";
+    info.appendChild(price);
 
-addButton.textContent =
-language === "ku"
-? "زیادکردن بۆ سەبەت"
-: "Add to Cart";
+    if (!product.sold) {
+      const addButton =
+        document.createElement("button");
 
-addButton.addEventListener(
-"click",
-(event) => {
-event.stopPropagation();
+      addButton.className =
+        "add-cart";
 
-addToCart(product.id);
-}
-);
+      addButton.type =
+        "button";
 
-info.appendChild(addButton);
+      addButton.textContent =
+        language === "ku"
+          ? "زیادکردن بۆ سەبەت"
+          : "Add to Cart";
 
-} else {
+      addButton.addEventListener(
+        "click",
+        (event) => {
+          event.stopPropagation();
 
-const soldButton =
-document.createElement("button");
+          addToCart(product.id);
+        }
+      );
 
-soldButton.className =
-"add-cart";
+      info.appendChild(
+        addButton
+      );
 
-soldButton.type = "button";
+    } else {
+      const soldButton =
+        document.createElement("button");
 
-soldButton.disabled = true;
+      soldButton.className =
+        "add-cart";
 
-soldButton.textContent =
-language === "ku"
-? "فرۆشراوە"
-: "SOLD";
+      soldButton.type =
+        "button";
 
-info.appendChild(
-soldButton
-);
+      soldButton.disabled =
+        true;
 
-}
+      soldButton.textContent =
+        language === "ku"
+          ? "فرۆشراوە"
+          : "SOLD";
 
-card.appendChild(imageArea);
-card.appendChild(info);
+      info.appendChild(
+        soldButton
+      );
+    }
 
-card.addEventListener(
-"click",
-() => {
-openProductDetails(product.id);
-}
-);
+    card.appendChild(
+      imageArea
+    );
 
-container.appendChild(card);
+    card.appendChild(
+      info
+    );
 
-});
+    card.addEventListener(
+      "click",
+      () => {
+        openProductDetails(
+          product.id
+        );
+      }
+    );
+
+    container.appendChild(
+      card
+    );
+  });
 }
 
 /* =========================
@@ -438,28 +516,28 @@ CATEGORY
 ========================= */
 
 function formatCategory(category) {
-if (!category) return "";
+  if (!category) return "";
 
-if (language !== "ku") {
-return category;
-}
+  if (language !== "ku") {
+    return category;
+  }
 
-const translations = {
-keyboard: "کیبۆرد",
-mouse: "ماوس",
-headset: "هێدسێت",
-mousepad: "ماوس پاد",
-controller: "کۆنتڕۆڵەر",
-monitor: "مۆنیتەر",
-accessories: "ئاکسسواری",
-other: "هی تر"
-};
+  const translations = {
+    keyboard: "کیبۆرد",
+    mouse: "ماوس",
+    headset: "هێدسێت",
+    mousepad: "ماوس پاد",
+    controller: "کۆنتڕۆڵەر",
+    monitor: "مۆنیتەر",
+    accessories: "ئاکسسواری",
+    other: "هی تر"
+  };
 
-return (
-translations[
-String(category).toLowerCase()
-] || category
-);
+  return (
+    translations[
+      String(category).toLowerCase()
+    ] || category
+  );
 }
 
 /* =========================
@@ -467,49 +545,114 @@ SEARCH / FILTER
 ========================= */
 
 function filterProducts() {
-const search =
-(
-$("searchInput")?.value || ""
-).toLowerCase();
+  const search =
+    (
+      $("searchInput")?.value ||
+      ""
+    ).toLowerCase();
 
-const connection =
-$("connectionFilter")?.value || "all";
+  const connection =
+    $("connectionFilter")?.value ||
+    "all";
 
-const condition =
-$("conditionFilter")?.value || "all";
+  const condition =
+    $("conditionFilter")?.value ||
+    "all";
 
-const filtered =
-products.filter((product) => {
-const text = `         ${product.name || ""}
+  const filtered =
+    products.filter((product) => {
+      const text =
+        `
+        ${product.name || ""}
         ${product.brand || ""}
         ${product.category || ""}
         ${product.connection || ""}
         ${product.switch_type || ""}
-      `.toLowerCase();
+        `.toLowerCase();
 
-const searchMatch =
-text.includes(search);
+      const searchMatch =
+        text.includes(search);
 
-const connectionMatch =
-connection === "all" ||
-String(product.connection || "")
-.toLowerCase() ===
-connection.toLowerCase();
+      const connectionMatch =
+        connection === "all" ||
+        String(
+          product.connection || ""
+        ).toLowerCase() ===
+          connection.toLowerCase();
 
-const conditionMatch =
-condition === "all" ||
-String(product.condition || "")
-.toLowerCase() ===
-condition.toLowerCase();
+      const conditionMatch =
+        condition === "all" ||
+        String(
+          product.condition || ""
+        ).toLowerCase() ===
+          condition.toLowerCase();
 
-return (
-searchMatch &&
-connectionMatch &&
-conditionMatch
-);
-});
+      return (
+        searchMatch &&
+        connectionMatch &&
+        conditionMatch
+      );
+    });
 
-renderProducts(filtered);
+  renderProducts(
+    filtered
+  );
+}
+
+/* =========================
+GET FILTERED PRODUCTS
+========================= */
+
+function getFilteredProducts() {
+  const search =
+    (
+      $("searchInput")?.value ||
+      ""
+    ).toLowerCase();
+
+  const connection =
+    $("connectionFilter")?.value ||
+    "all";
+
+  const condition =
+    $("conditionFilter")?.value ||
+    "all";
+
+  return products.filter(
+    (product) => {
+      const text =
+        `
+        ${product.name || ""}
+        ${product.brand || ""}
+        ${product.category || ""}
+        ${product.connection || ""}
+        ${product.switch_type || ""}
+        `.toLowerCase();
+
+      const searchMatch =
+        text.includes(search);
+
+      const connectionMatch =
+        connection === "all" ||
+        String(
+          product.connection || ""
+        ).toLowerCase() ===
+          connection.toLowerCase();
+
+      const conditionMatch =
+        condition === "all" ||
+        String(
+          product.condition || ""
+        ).toLowerCase() ===
+          condition.toLowerCase();
+
+      return (
+        searchMatch &&
+        connectionMatch &&
+        conditionMatch
+      );
+    }
+  );
 }
 
 /* =========================
@@ -517,156 +660,156 @@ PRODUCT DETAILS
 ========================= */
 
 function openProductDetails(id) {
-const product =
-findProduct(id);
+  const product =
+    findProduct(id);
 
-if (!product) return;
+  if (!product) return;
 
-selectedProductId =
-product.id;
+  selectedProductId =
+    product.id;
 
-const overlay =
-$("productDetailsOverlay");
+  const overlay =
+    $("productDetailsOverlay");
 
-if (!overlay) return;
+  if (!overlay) return;
 
-const image =
-$("detailsImage");
+  const image =
+    $("detailsImage");
 
-const noImage =
-$("detailsNoImage");
+  const noImage =
+    $("detailsNoImage");
 
-if (image) {
-if (product.image_url) {
-image.src =
-product.image_url;
+  if (image) {
+    if (product.image_url) {
+      image.src =
+        product.image_url;
 
-image.alt =
-product.name || "Product";
+      image.alt =
+        product.name ||
+        "Product";
 
-image.classList.remove(
-"hidden"
-);
+      image.classList.remove(
+        "hidden"
+      );
 
-noImage?.classList.add(
-"hidden"
-);
-} else {
-image.removeAttribute("src");
+      noImage?.classList.add(
+        "hidden"
+      );
 
-image.classList.add(
-"hidden"
-);
+    } else {
+      image.removeAttribute(
+        "src"
+      );
 
-noImage?.classList.remove(
-"hidden"
-);
-}
+      image.classList.add(
+        "hidden"
+      );
 
-}
+      noImage?.classList.remove(
+        "hidden"
+      );
+    }
+  }
 
-if ($("detailsBrand")) {
-$("detailsBrand").textContent =
-product.brand || "";
-}
+  if ($("detailsBrand")) {
+    $("detailsBrand").textContent =
+      product.brand || "";
+  }
 
-if ($("detailsName")) {
-$("detailsName").textContent =
-product.name || "";
-}
+  if ($("detailsName")) {
+    $("detailsName").textContent =
+      product.name || "";
+  }
 
-if ($("detailsCategory")) {
-$("detailsCategory").textContent =
-formatCategory(
-product.category
-);
-}
+  if ($("detailsCategory")) {
+    $("detailsCategory").textContent =
+      formatCategory(
+        product.category
+      );
+  }
 
-if ($("detailsConnection")) {
-$("detailsConnection").textContent =
-product.connection || "";
-}
+  if ($("detailsConnection")) {
+    $("detailsConnection").textContent =
+      product.connection || "";
+  }
 
-const switchRow =
-$("detailsSwitchRow");
+  const switchRow =
+    $("detailsSwitchRow");
 
-const switchText =
-$("detailsSwitch");
+  const switchText =
+    $("detailsSwitch");
 
-if (
-product.switch_type &&
-String(product.category)
-.toLowerCase() === "keyboard"
-) {
-if (switchText) {
-switchText.textContent =
-`${
+  if (
+    product.switch_type &&
+    String(product.category)
+      .toLowerCase() ===
+      "keyboard"
+  ) {
+    if (switchText) {
+      switchText.textContent =
+        `${
           language === "ku"
             ? "سویچە"
             : "Switch"
         }: ${product.switch_type}`;
-}
+    }
 
-switchRow?.classList.remove(
-"hidden"
-);
+    switchRow?.classList.remove(
+      "hidden"
+    );
 
-} else {
-switchRow?.classList.add(
-"hidden"
-);
-}
+  } else {
+    switchRow?.classList.add(
+      "hidden"
+    );
+  }
 
-if ($("detailsUSD")) {
-$("detailsUSD").textContent =
-`$${Number(
-      product.price_usd || 0
-    ).toFixed(2)}`;
-}
+  if ($("detailsUSD")) {
+    $("detailsUSD").textContent =
+      `$${Number(
+        product.price_usd || 0
+      ).toFixed(2)}`;
+  }
 
-if ($("detailsIQD")) {
-$("detailsIQD").textContent =
-`${Number(
-      product.price_iqd || 0
-    ).toLocaleString()} IQD`;
-}
+  if ($("detailsIQD")) {
+    $("detailsIQD").textContent =
+      `${Number(
+        product.price_iqd || 0
+      ).toLocaleString()} IQD`;
+  }
 
-if ($("detailsAddCart")) {
+  if ($("detailsAddCart")) {
+    if (product.sold) {
+      $("detailsAddCart").textContent =
+        language === "ku"
+          ? "فرۆشراوە"
+          : "SOLD";
 
-if (product.sold) {
+      $("detailsAddCart").disabled =
+        true;
 
-$("detailsAddCart").textContent =
-language === "ku"
-? "فرۆشراوە"
-: "SOLD";
+    } else {
+      $("detailsAddCart").textContent =
+        language === "ku"
+          ? "زیادکردن بۆ سەبەت"
+          : "ADD TO CART";
 
-$("detailsAddCart").disabled =
-true;
+      $("detailsAddCart").disabled =
+        false;
+    }
+  }
 
-} else {
-
-$("detailsAddCart").textContent =
-language === "ku"
-? "زیادکردن بۆ سەبەت"
-: "ADD TO CART";
-
-$("detailsAddCart").disabled =
-false;
-
-}
-
-}
-
-overlay.classList.remove(
-"hidden"
-);
+  overlay.classList.remove(
+    "hidden"
+  );
 }
 
 function closeProductDetails() {
-$("productDetailsOverlay")
-?.classList.add("hidden");
+  $("productDetailsOverlay")
+    ?.classList.add("hidden");
 
-selectedProductId = null;
+  selectedProductId =
+    null;
 }
 
 /* =========================
@@ -674,11 +817,11 @@ PRODUCT FINDER
 ========================= */
 
 function findProduct(id) {
-return products.find(
-(product) =>
-String(product.id) ===
-String(id)
-);
+  return products.find(
+    (product) =>
+      String(product.id) ===
+      String(id)
+  );
 }
 
 /* =========================
@@ -686,288 +829,337 @@ CART
 ========================= */
 
 function addToCart(id) {
-const product =
-findProduct(id);
+  const product =
+    findProduct(id);
 
-if (!product) {
-console.error(
-"Product not found:",
-id
-);
+  if (!product) {
+    console.error(
+      "Product not found:",
+      id
+    );
 
-return;
-}
+    return;
+  }
 
-if (product.sold) {
-alert(
-language === "ku"
-? "ئەم بەرهەمە فرۆشراوە."
-: "This product is sold."
-);
+  if (product.sold) {
+    alert(
+      language === "ku"
+        ? "ئەم بەرهەمە فرۆشراوە."
+        : "This product is sold."
+    );
 
-return;
-}
+    return;
+  }
 
-const existing =
-cart.find(
-(item) =>
-String(item.id) ===
-String(product.id)
-);
+  const existing =
+    cart.find(
+      (item) =>
+        String(item.id) ===
+        String(product.id)
+    );
 
-if (existing) {
-existing.quantity++;
-} else {
-cart.push({
-id: product.id,
-name: product.name,
-price_usd:
-product.price_usd,
-price_iqd:
-product.price_iqd,
-quantity: 1
-});
-}
+  if (existing) {
+    existing.quantity++;
+  } else {
+    cart.push({
+      id: product.id,
+      name: product.name,
+      price_usd:
+        product.price_usd,
+      price_iqd:
+        product.price_iqd,
+      quantity: 1
+    });
+  }
 
-saveCart();
-renderCart();
-openCart();
+  saveCart();
+  renderCart();
+  openCart();
 }
 
 function removeFromCart(id) {
-cart =
-cart.filter(
-(item) =>
-String(item.id) !==
-String(id)
-);
+  cart =
+    cart.filter(
+      (item) =>
+        String(item.id) !==
+        String(id)
+    );
 
-saveCart();
-renderCart();
+  saveCart();
+  renderCart();
 }
 
 function changeQuantity(
-id,
-amount
+  id,
+  amount
 ) {
-const item =
-cart.find(
-(cartItem) =>
-String(cartItem.id) ===
-String(id)
-);
+  const item =
+    cart.find(
+      (cartItem) =>
+        String(cartItem.id) ===
+        String(id)
+    );
 
-if (!item) return;
+  if (!item) return;
 
-item.quantity += amount;
+  item.quantity += amount;
 
-if (item.quantity <= 0) {
-removeFromCart(id);
-return;
-}
+  if (item.quantity <= 0) {
+    removeFromCart(id);
+    return;
+  }
 
-saveCart();
-renderCart();
+  saveCart();
+  renderCart();
 }
 
 function saveCart() {
-localStorage.setItem(
-"ahstore_cart",
-JSON.stringify(cart)
-);
+  localStorage.setItem(
+    "ahstore_cart",
+    JSON.stringify(cart)
+  );
 }
 
 function renderCart() {
-const container =
-$("cartItems");
+  const container =
+    $("cartItems");
 
-const count =
-$("cartCount");
+  const count =
+    $("cartCount");
 
-const total =
-$("cartTotal");
+  const total =
+    $("cartTotal");
 
-if (!container) return;
+  if (!container) return;
 
-const totalItems =
-cart.reduce(
-(sum, item) =>
-sum +
-Number(item.quantity || 0),
-0
-);
+  const totalItems =
+    cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.quantity || 0
+        ),
+      0
+    );
 
-if (count) {
-count.textContent =
-totalItems;
-}
+  if (count) {
+    count.textContent =
+      totalItems;
+  }
 
-if (!cart.length) {
-container.innerHTML =
-`<div class="loading">
+  if (!cart.length) {
+    container.innerHTML =
+      `<div class="loading">
         ${
           language === "ku"
             ? "سەبەتەکە بەتاڵە"
             : "Your cart is empty"
-        }       </div>`;
+        }
+      </div>`;
 
-if (total) {
-total.textContent =
-"$0";
-}
+    if (total) {
+      total.textContent =
+        "$0";
+    }
 
-return;
-}
+    return;
+  }
 
-let totalUSD = 0;
+  let totalUSD = 0;
 
-container.innerHTML = "";
+  container.innerHTML = "";
 
-cart.forEach((item) => {
-totalUSD +=
-Number(
-item.price_usd || 0
-) *
-Number(
-item.quantity || 0
-);
+  cart.forEach((item) => {
+    totalUSD +=
+      Number(
+        item.price_usd || 0
+      ) *
+      Number(
+        item.quantity || 0
+      );
 
-const cartItem =
-document.createElement("div");
+    const cartItem =
+      document.createElement(
+        "div"
+      );
 
-cartItem.className =
-"cart-item";
+    cartItem.className =
+      "cart-item";
 
-const info =
-document.createElement("div");
+    const info =
+      document.createElement(
+        "div"
+      );
 
-const name =
-document.createElement(
-"strong"
-);
+    const name =
+      document.createElement(
+        "strong"
+      );
 
-name.textContent =
-item.name || "";
+    name.textContent =
+      item.name || "";
 
-const price =
-document.createElement("div");
+    const price =
+      document.createElement(
+        "div"
+      );
 
-price.textContent =
-`$${Number(
-  item.price_usd || 0
-).toFixed(2)}`;
+    price.textContent =
+      `$${Number(
+        item.price_usd || 0
+      ).toFixed(2)}`;
 
-info.appendChild(name);
-info.appendChild(price);
+    info.appendChild(name);
+    info.appendChild(price);
 
-const quantity =
-document.createElement("div");
+    const quantity =
+      document.createElement(
+        "div"
+      );
 
-quantity.className =
-"quantity";
+    quantity.className =
+      "quantity";
 
-const minus =
-document.createElement(
-"button"
-);
+    const minus =
+      document.createElement(
+        "button"
+      );
 
-minus.type = "button";
-minus.textContent = "−";
+    minus.type =
+      "button";
 
-minus.addEventListener(
-"click",
-() => {
-changeQuantity(
-item.id,
--1
-);
-}
-);
+    minus.textContent =
+      "−";
 
-const number =
-document.createElement("span");
+    minus.addEventListener(
+      "click",
+      () => {
+        changeQuantity(
+          item.id,
+          -1
+        );
+      }
+    );
 
-number.textContent =
-item.quantity;
+    const number =
+      document.createElement(
+        "span"
+      );
 
-const plus =
-document.createElement(
-"button"
-);
+    number.textContent =
+      item.quantity;
 
-plus.type = "button";
-plus.textContent = "+";
+    const plus =
+      document.createElement(
+        "button"
+      );
 
-plus.addEventListener(
-"click",
-() => {
-changeQuantity(
-item.id,
-1
-);
-}
-);
+    plus.type =
+      "button";
 
-quantity.appendChild(minus);
-quantity.appendChild(number);
-quantity.appendChild(plus);
+    plus.textContent =
+      "+";
 
-const remove =
-document.createElement(
-"button"
-);
+    plus.addEventListener(
+      "click",
+      () => {
+        changeQuantity(
+          item.id,
+          1
+        );
+      }
+    );
 
-remove.type = "button";
-remove.className =
-"remove-cart";
+    quantity.appendChild(
+      minus
+    );
 
-remove.textContent = "×";
+    quantity.appendChild(
+      number
+    );
 
-remove.addEventListener(
-"click",
-() => {
-removeFromCart(
-item.id
-);
-}
-);
+    quantity.appendChild(
+      plus
+    );
 
-cartItem.appendChild(info);
-cartItem.appendChild(quantity);
-cartItem.appendChild(remove);
+    const remove =
+      document.createElement(
+        "button"
+      );
 
-container.appendChild(
-cartItem
-);
+    remove.type =
+      "button";
 
-});
+    remove.className =
+      "remove-cart";
 
-if (total) {
-total.textContent =
-`$${totalUSD.toFixed(2)}`;
-}
+    remove.textContent =
+      "×";
+
+    remove.addEventListener(
+      "click",
+      () => {
+        removeFromCart(
+          item.id
+        );
+      }
+    );
+
+    cartItem.appendChild(
+      info
+    );
+
+    cartItem.appendChild(
+      quantity
+    );
+
+    cartItem.appendChild(
+      remove
+    );
+
+    container.appendChild(
+      cartItem
+    );
+  });
+
+  if (total) {
+    total.textContent =
+      `$${totalUSD.toFixed(2)}`;
+  }
 }
 
 function openCart() {
-$("cartDrawer")
-?.classList.remove("hidden");
+  $("cartDrawer")
+    ?.classList.remove(
+      "hidden"
+    );
 
-$("cartDrawer")
-?.classList.add("open");
+  $("cartDrawer")
+    ?.classList.add(
+      "open"
+    );
 
-$("cartOverlay")
-?.classList.remove("hidden");
+  $("cartOverlay")
+    ?.classList.remove(
+      "hidden"
+    );
 }
 
 function closeCart() {
-$("cartDrawer")
-?.classList.remove("open");
+  $("cartDrawer")
+    ?.classList.remove(
+      "open"
+    );
 
-$("cartDrawer")
-?.classList.add("hidden");
+  $("cartDrawer")
+    ?.classList.add(
+      "hidden"
+    );
 
-$("cartOverlay")
-?.classList.add("hidden");
+  $("cartOverlay")
+    ?.classList.add(
+      "hidden"
+    );
 }
 
 /* =========================
@@ -975,39 +1167,41 @@ WHATSAPP
 ========================= */
 
 function checkoutWhatsApp() {
-if (!cart.length) {
-alert(
-language === "ku"
-? "سەبەتەکە بەتاڵە."
-: "Your cart is empty."
-);
+  if (!cart.length) {
+    alert(
+      language === "ku"
+        ? "سەبەتەکە بەتاڵە."
+        : "Your cart is empty."
+    );
 
-return;
-}
+    return;
+  }
 
-let message =
-language === "ku"
-? "سڵاو AH STORE، دەمەوێت ئەم بەرهەمانە داوا بکەم:\n\n"
-: "Hello AH STORE, I would like to order:\n\n";
+  let message =
+    language === "ku"
+      ? "سڵاو AH STORE، دەمەوێت ئەم بەرهەمانە داوا بکەم:\n\n"
+      : "Hello AH STORE, I would like to order:\n\n";
 
-cart.forEach((item) => {
-message +=
-`• ${item.name} x${item.quantity}\n`;
-});
+  cart.forEach((item) => {
+    message +=
+      `• ${item.name} x${item.quantity}\n`;
+  });
 
-message +=
-language === "ku"
-? "\nتکایە زانیارییەکانی داواکارییەکەم بۆ بنێرە."
-: "\nPlease send me the order details.";
+  message +=
+    language === "ku"
+      ? "\nتکایە زانیارییەکانی داواکارییەکەم بۆ بنێرە."
+      : "\nPlease send me the order details.";
 
-const url =
-`https://wa.me/${WHATSAPP}?text=` +
-encodeURIComponent(message);
+  const url =
+    `https://wa.me/${WHATSAPP}?text=` +
+    encodeURIComponent(
+      message
+    );
 
-window.open(
-url,
-"_blank"
-);
+  window.open(
+    url,
+    "_blank"
+  );
 }
 
 /* =========================
@@ -1015,124 +1209,88 @@ LANGUAGE
 ========================= */
 
 function toggleLanguage() {
-language =
-language === "en"
-? "ku"
-: "en";
+  language =
+    language === "en"
+      ? "ku"
+      : "en";
 
-localStorage.setItem(
-"ahstore_language",
-language
-);
+  localStorage.setItem(
+    "ahstore_language",
+    language
+  );
 
-applyLanguage();
+  applyLanguage();
 
-renderProducts(
-getFilteredProducts()
-);
+  renderProducts(
+    getFilteredProducts()
+  );
 
-renderCart();
+  renderCart();
 
-if (selectedProductId !== null) {
-openProductDetails(
-selectedProductId
-);
-}
+  if (
+    selectedProductId !== null
+  ) {
+    openProductDetails(
+      selectedProductId
+    );
+  }
 }
 
 function applyLanguage() {
-document.documentElement.lang =
-language === "ku"
-? "ku"
-: "en";
+  document.documentElement.lang =
+    language === "ku"
+      ? "ku"
+      : "en";
 
-document.documentElement.dir =
-language === "ku"
-? "rtl"
-: "ltr";
+  document.documentElement.dir =
+    language === "ku"
+      ? "rtl"
+      : "ltr";
 
-document
-.querySelectorAll("[data-en]")
-.forEach((element) => {
-const text =
-language === "ku"
-? element.dataset.ku
-: element.dataset.en;
+  document
+    .querySelectorAll(
+      "[data-en]"
+    )
+    .forEach((element) => {
 
-if (text) {
-element.textContent =
-text;
-}
-});
+      /* Do not overwrite the rotating products heading */
+      if (
+        element.id ===
+        "productsHeading"
+      ) {
+        return;
+      }
 
-const input =
-$("searchInput");
+      const text =
+        language === "ku"
+          ? element.dataset.ku
+          : element.dataset.en;
 
-if (input) {
-input.placeholder =
-language === "ku"
-? input.dataset.placeholderKu
-: input.dataset.placeholderEn;
-}
+      if (text) {
+        element.textContent =
+          text;
+      }
+    });
 
-const languageButton =
-$("languageBtn");
+  const input =
+    $("searchInput");
 
-if (languageButton) {
-languageButton.textContent =
-language === "ku"
-? "English"
-: "کوردی";
-}
-}
+  if (input) {
+    input.placeholder =
+      language === "ku"
+        ? input.dataset.placeholderKu
+        : input.dataset.placeholderEn;
+  }
 
-function getFilteredProducts() {
-const search =
-(
-$("searchInput")?.value ||
-""
-).toLowerCase();
+  const languageButton =
+    $("languageBtn");
 
-const connection =
-$("connectionFilter")?.value ||
-"all";
-
-const condition =
-$("conditionFilter")?.value ||
-"all";
-
-return products.filter(
-(product) => {
-const text = `         ${product.name || ""}
-        ${product.brand || ""}
-        ${product.category || ""}
-        ${product.connection || ""}
-        ${product.switch_type || ""}
-      `.toLowerCase();
-
-const searchMatch =
-text.includes(search);
-
-const connectionMatch =
-connection === "all" ||
-String(product.connection || "")
-.toLowerCase() ===
-connection.toLowerCase();
-
-const conditionMatch =
-condition === "all" ||
-String(product.condition || "")
-.toLowerCase() ===
-condition.toLowerCase();
-
-return (
-searchMatch &&
-connectionMatch &&
-conditionMatch
-);
-}
-);
-
+  if (languageButton) {
+    languageButton.textContent =
+      language === "ku"
+        ? "English"
+        : "کوردی";
+  }
 }
 
 /* =========================
@@ -1140,99 +1298,112 @@ ADMIN
 ========================= */
 
 function openAdmin() {
-$("adminModal")
-?.classList.remove("hidden");
+  $("adminModal")
+    ?.classList.remove(
+      "hidden"
+    );
 
-checkAuth();
+  checkAuth();
 }
 
 function closeAdmin() {
-$("adminModal")
-?.classList.add("hidden");
+  $("adminModal")
+    ?.classList.add(
+      "hidden"
+    );
 }
 
 async function checkAuth() {
-const {
-data: { session }
-} = await db.auth.getSession();
+  const {
+    data: { session }
+  } = await db.auth.getSession();
 
-if (session) {
-showAdminPanel();
-} else {
-showLoginPanel();
-}
+  if (session) {
+    showAdminPanel();
+  } else {
+    showLoginPanel();
+  }
 }
 
 function showLoginPanel() {
-$("loginSection")
-?.classList.remove("hidden");
+  $("loginSection")
+    ?.classList.remove(
+      "hidden"
+    );
 
-$("adminPanel")
-?.classList.add("hidden");
+  $("adminPanel")
+    ?.classList.add(
+      "hidden"
+    );
 }
 
 function showAdminPanel() {
-$("loginSection")
-?.classList.add("hidden");
+  $("loginSection")
+    ?.classList.add(
+      "hidden"
+    );
 
-$("adminPanel")
-?.classList.remove("hidden");
+  $("adminPanel")
+    ?.classList.remove(
+      "hidden"
+    );
 
-renderAdminProducts();
+  renderAdminProducts();
 }
 
 async function loginAdmin(event) {
-event.preventDefault();
+  event.preventDefault();
 
-const email =
-$("adminEmail")
-?.value.trim();
+  const email =
+    $("adminEmail")
+      ?.value.trim();
 
-const password =
-$("adminPassword")
-?.value;
+  const password =
+    $("adminPassword")
+      ?.value;
 
-const message =
-$("loginMessage");
+  const message =
+    $("loginMessage");
 
-if (!email || !password) {
-return;
-}
+  if (!email || !password) {
+    return;
+  }
 
-if (message) {
-message.textContent =
-"Signing in...";
-}
+  if (message) {
+    message.textContent =
+      "Signing in...";
+  }
 
-const { error } =
-await db.auth.signInWithPassword({
-email,
-password
-});
+  const { error } =
+    await db.auth.signInWithPassword({
+      email,
+      password
+    });
 
-if (error) {
-if (message) {
-message.textContent =
-"Login failed: " +
-error.message;
-}
+  if (error) {
+    if (message) {
+      message.textContent =
+        "Login failed: " +
+        error.message;
+    }
 
-return;
-}
+    return;
+  }
 
-if (message) {
-message.textContent = "";
-}
+  if (message) {
+    message.textContent =
+      "";
+  }
 
-showAdminPanel();
+  showAdminPanel();
 }
 
 async function logoutAdmin() {
-await db.auth.signOut();
+  await db.auth.signOut();
 
-editingId = null;
+  editingId = null;
 
-showLoginPanel();
+  showLoginPanel();
 }
 
 /* =========================
@@ -1240,237 +1411,256 @@ SAVE PRODUCT
 ========================= */
 
 async function saveProduct(event) {
-event.preventDefault();
+  event.preventDefault();
 
-const name =
-$("productName")
-?.value.trim();
+  const name =
+    $("productName")
+      ?.value.trim();
 
-const brand =
-$("productBrand")
-?.value.trim();
+  const brand =
+    $("productBrand")
+      ?.value.trim();
 
-const category =
-$("productCategory")
-?.value;
+  const category =
+    $("productCategory")
+      ?.value;
 
-const priceUSD =
-Number(
-$("productUSD")
-?.value || 0
-);
+  const priceUSD =
+    Number(
+      $("productUSD")
+        ?.value || 0
+    );
 
-const priceIQD =
-Number(
-$("productIQD")
-?.value || 0
-);
+  const priceIQD =
+    Number(
+      $("productIQD")
+        ?.value || 0
+    );
 
-const connection =
-$("productConnection")
-?.value;
+  const connection =
+    $("productConnection")
+      ?.value;
 
-const switchType =
-$("productSwitch")
-?.value.trim();
+  const condition =
+    $("productCondition")
+      ?.value;
 
-const imageFile =
-$("productImage")
-?.files?.[0];
+  const switchType =
+    $("productSwitch")
+      ?.value.trim();
 
-const message =
-$("productMessage");
+  const imageFile =
+    $("productImage")
+      ?.files?.[0];
 
-const saveButton =
-$("saveProductBtn");
+  const message =
+    $("productMessage");
 
-if (!name) {
-if (message) {
-message.textContent =
-"Product name is required.";
-}
+  const saveButton =
+    $("saveProductBtn");
 
-return;
-}
+  if (!name) {
+    if (message) {
+      message.textContent =
+        "Product name is required.";
+    }
 
-if (saveButton) {
-saveButton.disabled = true;
-saveButton.textContent =
-editingId
-? "UPDATING..."
-: "ADDING...";
-}
+    return;
+  }
 
-let imageUrl = "";
+  if (saveButton) {
+    saveButton.disabled =
+      true;
 
-/* =========================
-KEEP OLD IMAGE
-========================= */
+    saveButton.textContent =
+      editingId
+        ? "UPDATING..."
+        : "ADDING...";
+  }
 
-if (editingId !== null) {
-const oldProduct =
-findProduct(editingId);
+  let imageUrl = "";
 
-imageUrl =
-oldProduct?.image_url || "";
+  /* =========================
+  KEEP OLD IMAGE
+  ========================= */
 
-}
+  if (editingId !== null) {
+    const oldProduct =
+      findProduct(
+        editingId
+      );
 
-/* =========================
-IMAGE UPLOAD
-========================= */
+    imageUrl =
+      oldProduct?.image_url ||
+      "";
+  }
 
-if (imageFile) {
-const extension =
-imageFile.name
-.split(".")
-.pop()
-.toLowerCase();
+  /* =========================
+  IMAGE UPLOAD
+  ========================= */
 
-const fileName =
-`${crypto.randomUUID()}.${extension}`;
+  if (imageFile) {
+    const extension =
+      imageFile.name
+        .split(".")
+        .pop()
+        .toLowerCase();
 
-const {
-error: uploadError
-} =
-await db.storage
-.from("products")
-.upload(
-fileName,
-imageFile
-);
+    const fileName =
+      `${crypto.randomUUID()}.${extension}`;
 
-if (uploadError) {
-alert(
-"Image upload failed: " +
-uploadError.message
-);
+    const {
+      error: uploadError
+    } =
+      await db.storage
+        .from("products")
+        .upload(
+          fileName,
+          imageFile
+        );
 
-if (saveButton) {
-saveButton.disabled =
-false;
+    if (uploadError) {
+      alert(
+        "Image upload failed: " +
+        uploadError.message
+      );
 
-saveButton.textContent =
-editingId
-? "UPDATE PRODUCT"
-: "ADD PRODUCT";
-}
+      if (saveButton) {
+        saveButton.disabled =
+          false;
 
-return;
-}
+        saveButton.textContent =
+          editingId
+            ? "UPDATE PRODUCT"
+            : "ADD PRODUCT";
+      }
 
-const {
-data: publicData
-} =
-db.storage
-.from("products")
-.getPublicUrl(
-fileName
-);
+      return;
+    }
 
-imageUrl =
-publicData?.publicUrl || "";
+    const {
+      data: publicData
+    } =
+      db.storage
+        .from("products")
+        .getPublicUrl(
+          fileName
+        );
 
-}
+    imageUrl =
+      publicData?.publicUrl ||
+      "";
+  }
 
-const productData = {
-name,
-brand,
-category,
+  const productData = {
+    name,
+    brand,
+    category,
 
-price_usd:
-priceUSD,
+    price_usd:
+      priceUSD,
 
-price_iqd:
-priceIQD,
+    price_iqd:
+      priceIQD,
 
-connection,
+    connection,
 
-switch_type:
-category === "keyboard"
-? switchType
-: null,
+    condition,
 
-image_url:
-imageUrl
+    switch_type:
+      category === "keyboard"
+        ? switchType
+        : null,
 
-};
+    image_url:
+      imageUrl
+  };
 
-let result;
+  let result;
 
-if (editingId !== null) {
-result =
-await db
-.from("products")
-.update(productData)
-.eq(
-"id",
-editingId
-);
-} else {
-result =
-await db
-.from("products")
-.insert(
-productData
-);
-}
+  if (editingId !== null) {
+    result =
+      await db
+        .from("products")
+        .update(
+          productData
+        )
+        .eq(
+          "id",
+          editingId
+        );
 
-if (result.error) {
-alert(
-"Could not save product: " +
-result.error.message
-);
+  } else {
+    result =
+      await db
+        .from("products")
+        .insert(
+          productData
+        );
+  }
 
-if (saveButton) {
-saveButton.disabled =
-false;
+  if (result.error) {
+    alert(
+      "Could not save product: " +
+      result.error.message
+    );
 
-saveButton.textContent =
-editingId !== null
-? "UPDATE PRODUCT"
-: "ADD PRODUCT";
-}
+    if (saveButton) {
+      saveButton.disabled =
+        false;
 
-return;
-}
+      saveButton.textContent =
+        editingId !== null
+          ? "UPDATE PRODUCT"
+          : "ADD PRODUCT";
+    }
 
-alert(
-editingId !== null
-? "Product updated!"
-: "Product added!"
-);
+    return;
+  }
 
-editingId = null;
+  alert(
+    editingId !== null
+      ? "Product updated!"
+      : "Product added!"
+  );
 
-$("productForm")?.reset();
+  editingId = null;
 
-$("cancelEditBtn")
-?.classList.add("hidden");
+  $("productForm")
+    ?.reset();
 
-if (saveButton) {
-saveButton.disabled = false;
-saveButton.textContent =
-"ADD PRODUCT";
-}
+  $("cancelEditBtn")
+    ?.classList.add(
+      "hidden"
+    );
 
-const preview =
-$("imagePreview");
+  if (saveButton) {
+    saveButton.disabled =
+      false;
 
-if (preview) {
-preview.src = "";
-preview.classList.add(
-"hidden"
-);
-}
+    saveButton.textContent =
+      "ADD PRODUCT";
+  }
 
-updateSwitchField();
+  const preview =
+    $("imagePreview");
 
-if (message) {
-message.textContent = "";
-}
+  if (preview) {
+    preview.src = "";
 
-await loadProducts();
+    preview.classList.add(
+      "hidden"
+    );
+  }
+
+  updateSwitchField();
+
+  if (message) {
+    message.textContent =
+      "";
+  }
+
+  await loadProducts();
 }
 
 /* =========================
@@ -1478,139 +1668,167 @@ ADMIN PRODUCTS
 ========================= */
 
 function renderAdminProducts() {
-const container =
-$("adminProductsList");
+  const container =
+    $("adminProductsList");
 
-if (!container) return;
+  if (!container) return;
 
-if (!products.length) {
-container.innerHTML =
-"<p>No products yet.</p>";
+  if (!products.length) {
+    container.innerHTML =
+      "<p>No products yet.</p>";
 
-return;
-}
+    return;
+  }
 
-container.innerHTML = "";
+  container.innerHTML = "";
 
-products.forEach((product) => {
-const item =
-document.createElement("div");
+  products.forEach((product) => {
+    const item =
+      document.createElement(
+        "div"
+      );
 
-item.className =
-"admin-product";
+    item.className =
+      "admin-product";
 
-const info =
-document.createElement("div");
+    const info =
+      document.createElement(
+        "div"
+      );
 
-const name =
-document.createElement(
-"strong"
-);
+    const name =
+      document.createElement(
+        "strong"
+      );
 
-name.textContent =
-product.name || "";
+    name.textContent =
+      product.name || "";
 
-const price =
-document.createElement(
-"small"
-);
+    const price =
+      document.createElement(
+        "small"
+      );
 
-price.textContent =
-`$${Number(
-  product.price_usd || 0
-).toFixed(2)} / ${Number(
-  product.price_iqd || 0
-).toLocaleString()} IQD`;
+    price.textContent =
+      `$${Number(
+        product.price_usd || 0
+      ).toFixed(2)} / ${Number(
+        product.price_iqd || 0
+      ).toLocaleString()} IQD`;
 
-info.appendChild(name);
-info.appendChild(price);
+    info.appendChild(name);
+    info.appendChild(price);
 
-/* =========================
-SOLD STATUS
-========================= */
+    /* =========================
+    SOLD STATUS
+    ========================= */
 
-const status =
-document.createElement("small");
+    const status =
+      document.createElement(
+        "small"
+      );
 
-status.textContent =
-product.sold
-? "SOLD"
-: "AVAILABLE";
+    status.textContent =
+      product.sold
+        ? "SOLD"
+        : "AVAILABLE";
 
-status.style.display =
-"block";
+    status.style.display =
+      "block";
 
-info.appendChild(status);
+    info.appendChild(status);
 
-const actions =
-document.createElement("div");
+    const actions =
+      document.createElement(
+        "div"
+      );
 
-const edit =
-document.createElement(
-"button"
-);
+    const edit =
+      document.createElement(
+        "button"
+      );
 
-edit.type = "button";
-edit.textContent = "Edit";
+    edit.type =
+      "button";
 
-edit.addEventListener(
-"click",
-() => {
-editProduct(
-product.id
-);
-}
-);
+    edit.textContent =
+      "Edit";
 
-const sold =
-document.createElement(
-"button"
-);
+    edit.addEventListener(
+      "click",
+      () => {
+        editProduct(
+          product.id
+        );
+      }
+    );
 
-sold.type = "button";
+    const sold =
+      document.createElement(
+        "button"
+      );
 
-sold.textContent =
-product.sold
-? "MARK AVAILABLE"
-: "MARK SOLD";
+    sold.type =
+      "button";
 
-sold.addEventListener(
-"click",
-() => {
-toggleSold(
-product.id
-);
-}
-);
+    sold.textContent =
+      product.sold
+        ? "MARK AVAILABLE"
+        : "MARK SOLD";
 
-const remove =
-document.createElement(
-"button"
-);
+    sold.addEventListener(
+      "click",
+      () => {
+        toggleSold(
+          product.id
+        );
+      }
+    );
 
-remove.type = "button";
-remove.textContent =
-"Delete";
+    const remove =
+      document.createElement(
+        "button"
+      );
 
-remove.addEventListener(
-"click",
-() => {
-deleteProduct(
-product.id
-);
-}
-);
+    remove.type =
+      "button";
 
-actions.appendChild(edit);
-actions.appendChild(sold);
-actions.appendChild(remove);
+    remove.textContent =
+      "Delete";
 
-item.appendChild(info);
-item.appendChild(actions);
+    remove.addEventListener(
+      "click",
+      () => {
+        deleteProduct(
+          product.id
+        );
+      }
+    );
 
-container.appendChild(item);
+    actions.appendChild(
+      edit
+    );
 
-});
+    actions.appendChild(
+      sold
+    );
+
+    actions.appendChild(
+      remove
+    );
+
+    item.appendChild(
+      info
+    );
+
+    item.appendChild(
+      actions
+    );
+
+    container.appendChild(
+      item
+    );
+  });
 }
 
 /* =========================
@@ -1618,43 +1836,44 @@ TOGGLE SOLD
 ========================= */
 
 async function toggleSold(id) {
-const product =
-findProduct(id);
+  const product =
+    findProduct(id);
 
-if (!product) return;
+  if (!product) return;
 
-const newStatus =
-!Boolean(product.sold);
+  const newStatus =
+    !Boolean(
+      product.sold
+    );
 
-const { error } =
-await db
-.from("products")
-.update({
-sold: newStatus
-})
-.eq(
-"id",
-product.id
-);
+  const { error } =
+    await db
+      .from("products")
+      .update({
+        sold: newStatus
+      })
+      .eq(
+        "id",
+        product.id
+      );
 
-if (error) {
-alert(
-"Could not change sold status: " +
-error.message
-);
+  if (error) {
+    alert(
+      "Could not change sold status: " +
+      error.message
+    );
 
-return;
-}
+    return;
+  }
 
-product.sold =
-newStatus;
+  product.sold =
+    newStatus;
 
-renderProducts(
-getFilteredProducts()
-);
+  renderProducts(
+    getFilteredProducts()
+  );
 
-renderAdminProducts();
-
+  renderAdminProducts();
 }
 
 /* =========================
@@ -1662,59 +1881,68 @@ EDIT PRODUCT
 ========================= */
 
 function editProduct(id) {
-const product =
-findProduct(id);
+  const product =
+    findProduct(id);
 
-if (!product) return;
+  if (!product) return;
 
-editingId =
-product.id;
+  editingId =
+    product.id;
 
-$("productName").value =
-product.name || "";
+  $("productName").value =
+    product.name || "";
 
-$("productBrand").value =
-product.brand || "";
+  $("productBrand").value =
+    product.brand || "";
 
-$("productCategory").value =
-product.category || "other";
+  $("productCategory").value =
+    product.category ||
+    "other";
 
-$("productUSD").value =
-product.price_usd ?? "";
+  $("productUSD").value =
+    product.price_usd ?? "";
 
-$("productIQD").value =
-product.price_iqd ?? "";
+  $("productIQD").value =
+    product.price_iqd ?? "";
 
-$("productConnection").value =
-product.connection ||
-"Wired";
+  $("productConnection").value =
+    product.connection ||
+    "Wired";
 
-$("productSwitch").value =
-product.switch_type || "";
+  if ($("productCondition")) {
+    $("productCondition").value =
+      product.condition ||
+      "New";
+  }
 
-const preview =
-$("imagePreview");
+  $("productSwitch").value =
+    product.switch_type ||
+    "";
 
-if (
-preview &&
-product.image_url
-) {
-preview.src =
-product.image_url;
+  const preview =
+    $("imagePreview");
 
-preview.classList.remove(
-"hidden"
-);
+  if (
+    preview &&
+    product.image_url
+  ) {
+    preview.src =
+      product.image_url;
 
-}
+    preview.classList.remove(
+      "hidden"
+    );
+  }
 
-$("saveProductBtn").textContent =
-"UPDATE PRODUCT";
+  $("saveProductBtn").textContent =
+    "UPDATE PRODUCT";
 
-$("cancelEditBtn")
-?.classList.remove("hidden");
+  $("cancelEditBtn")
+    ?.classList.remove(
+      "hidden"
+    );
 
-updateSwitchField();
+  updateSwitchField();
 }
 
 /* =========================
@@ -1722,27 +1950,31 @@ CANCEL EDIT
 ========================= */
 
 function cancelEdit() {
-editingId = null;
+  editingId = null;
 
-$("productForm")?.reset();
+  $("productForm")
+    ?.reset();
 
-$("cancelEditBtn")
-?.classList.add("hidden");
+  $("cancelEditBtn")
+    ?.classList.add(
+      "hidden"
+    );
 
-$("saveProductBtn").textContent =
-"ADD PRODUCT";
+  $("saveProductBtn").textContent =
+    "ADD PRODUCT";
 
-const preview =
-$("imagePreview");
+  const preview =
+    $("imagePreview");
 
-if (preview) {
-preview.src = "";
-preview.classList.add(
-"hidden"
-);
-}
+  if (preview) {
+    preview.src = "";
 
-updateSwitchField();
+    preview.classList.add(
+      "hidden"
+    );
+  }
+
+  updateSwitchField();
 }
 
 /* =========================
@@ -1750,45 +1982,45 @@ DELETE PRODUCT
 ========================= */
 
 async function deleteProduct(id) {
-const product =
-findProduct(id);
+  const product =
+    findProduct(id);
 
-if (!product) return;
+  if (!product) return;
 
-const confirmed =
-confirm(
-`Delete "${product.name}"?`
-);
+  const confirmed =
+    confirm(
+      `Delete "${product.name}"?`
+    );
 
-if (!confirmed) return;
+  if (!confirmed) return;
 
-const { error } =
-await db
-.from("products")
-.delete()
-.eq(
-"id",
-product.id
-);
+  const { error } =
+    await db
+      .from("products")
+      .delete()
+      .eq(
+        "id",
+        product.id
+      );
 
-if (error) {
-alert(
-"Delete failed: " +
-error.message
-);
+  if (error) {
+    alert(
+      "Delete failed: " +
+      error.message
+    );
 
-return;
-}
+    return;
+  }
 
-if (
-editingId !== null &&
-String(editingId) ===
-String(product.id)
-) {
-cancelEdit();
-}
+  if (
+    editingId !== null &&
+    String(editingId) ===
+      String(product.id)
+  ) {
+    cancelEdit();
+  }
 
-await loadProducts();
+  await loadProducts();
 }
 
 /* =========================
@@ -1796,24 +2028,24 @@ SWITCH FIELD
 ========================= */
 
 function updateSwitchField() {
-const category =
-$("productCategory")
-?.value;
+  const category =
+    $("productCategory")
+      ?.value;
 
-const field =
-$("switchField");
+  const field =
+    $("switchField");
 
-if (!field) return;
+  if (!field) return;
 
-if (category === "keyboard") {
-field.classList.remove(
-"hidden"
-);
-} else {
-field.classList.add(
-"hidden"
-);
-}
+  if (category === "keyboard") {
+    field.classList.remove(
+      "hidden"
+    );
+  } else {
+    field.classList.add(
+      "hidden"
+    );
+  }
 }
 
 /* =========================
@@ -1821,37 +2053,39 @@ IMAGE PREVIEW
 ========================= */
 
 function previewImage() {
-const file =
-$("productImage")
-?.files?.[0];
+  const file =
+    $("productImage")
+      ?.files?.[0];
 
-const preview =
-$("imagePreview");
+  const preview =
+    $("imagePreview");
 
-if (!file || !preview) {
-return;
-}
+  if (!file || !preview) {
+    return;
+  }
 
-if (
-preview.dataset.objectUrl
-) {
-URL.revokeObjectURL(
-preview.dataset.objectUrl
-);
-}
+  if (
+    preview.dataset.objectUrl
+  ) {
+    URL.revokeObjectURL(
+      preview.dataset.objectUrl
+    );
+  }
 
-const objectUrl =
-URL.createObjectURL(file);
+  const objectUrl =
+    URL.createObjectURL(
+      file
+    );
 
-preview.dataset.objectUrl =
-objectUrl;
+  preview.dataset.objectUrl =
+    objectUrl;
 
-preview.src =
-objectUrl;
+  preview.src =
+    objectUrl;
 
-preview.classList.remove(
-"hidden"
-);
+  preview.classList.remove(
+    "hidden"
+  );
 }
 
 /* =========================
@@ -1859,23 +2093,22 @@ GLOBAL FUNCTIONS
 ========================= */
 
 window.addToCart =
-addToCart;
+  addToCart;
 
 window.removeFromCart =
-removeFromCart;
+  removeFromCart;
 
 window.changeQuantity =
-changeQuantity;
+  changeQuantity;
 
 window.editProduct =
-editProduct;
+  editProduct;
 
 window.deleteProduct =
-deleteProduct;
+  deleteProduct;
 
 window.openProductDetails =
-openProductDetails;
+  openProductDetails;
 
 window.closeProductDetails =
-closeProductDetails;
-```
+  closeProductDetails;
