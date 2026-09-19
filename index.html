@@ -909,8 +909,14 @@
     let headingIndex = 0;
 
     setInterval(() => {
-      headingIndex = (headingIndex + 1) % headingTexts.length;
-      productsHeading.textContent = headingTexts[headingIndex];
+      productsHeading.classList.add("heading-changing");
+
+      setTimeout(() => {
+        headingIndex = (headingIndex + 1) % headingTexts.length;
+        productsHeading.textContent = headingTexts[headingIndex];
+        productsHeading.classList.remove("heading-changing");
+      }, 350);
+
     }, 4000);
   </script>
 
