@@ -12,7 +12,7 @@ let cart = JSON.parse(localStorage.getItem("ahstore_cart") || "[]");
 let language = localStorage.getItem("ahstore_language") || "en";
 let editingId = null;
 let selectedProductId = null;
-let selectedCategory = "all";
+let activeCategory = "all";
 
 /* =========================
 HELPER
@@ -142,7 +142,7 @@ function setupButtons() {
       button.addEventListener(
         "click",
         () => {
-          selectedCategory =
+          activeCategory =
             button.dataset.category || "all";
 
           document
@@ -634,27 +634,30 @@ const customerCategoryGroups = {
   ]
 };
 
-function matchesCustomerCategory(product) {
+function matchesCustomerCategory(
+  productCategory,
+  customerCategory
+) {
   if (
-    selectedCategory === "all"
+    customerCategory === "all"
   ) {
     return true;
   }
 
   const category =
     String(
-      product.category || ""
+      productCategory || ""
     )
       .trim()
       .toLowerCase();
 
   const group =
     customerCategoryGroups[
-      selectedCategory
+      customerCategory
     ];
 
   if (!group) {
-    return true;
+    return false;
   }
 
   return group.includes(
@@ -711,14 +714,15 @@ function filterProducts() {
 
       const categoryMatch =
         matchesCustomerCategory(
-          product
+          product.category,
+          activeCategory
         );
 
       return (
         searchMatch &&
+        categoryMatch &&
         connectionMatch &&
-        conditionMatch &&
-        categoryMatch
+        conditionMatch
       );
     });
 
@@ -776,14 +780,15 @@ function getFilteredProducts() {
 
       const categoryMatch =
         matchesCustomerCategory(
-          product
+          product.category,
+          activeCategory
         );
 
       return (
         searchMatch &&
+        categoryMatch &&
         connectionMatch &&
-        conditionMatch &&
-        categoryMatch
+        conditionMatch
       );
     }
   );
