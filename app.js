@@ -1,3 +1,4 @@
+```javascript
 const SUPABASE_URL = "https://toeqdxunmvspulvkpdow.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JsjlGkffizJ1Ap7oPCAQ6Q_8TJ64tw0";
 const WHATSAPP = "9647701068935";
@@ -28,7 +29,40 @@ closeCart();
 closeProductDetails();
 loadProducts();
 checkAuth();
+startProductsHeadingRotation();
 });
+
+/* =========================
+PRODUCTS HEADING ROTATION
+========================= */
+
+function startProductsHeadingRotation() {
+const heading = $("productsHeading");
+
+if (!heading) return;
+
+const headingTexts = [
+"GAMING PRODUCTS",
+"ELECTRONIC PRODUCTS",
+"YOUR DESIRED PRODUCTS"
+];
+
+let headingIndex = 0;
+
+heading.textContent =
+headingTexts[headingIndex];
+
+setInterval(() => {
+
+headingIndex =
+(headingIndex + 1) %
+headingTexts.length;
+
+heading.textContent =
+headingTexts[headingIndex];
+
+}, 4000);
+}
 
 /* =========================
 BUTTONS
@@ -51,11 +85,6 @@ checkoutWhatsApp
 
 $("searchInput")?.addEventListener(
 "input",
-filterProducts
-);
-
-$("categoryFilter")?.addEventListener(
-"change",
 filterProducts
 );
 
@@ -142,7 +171,7 @@ const container = $("productsGrid");
 
 if (container) {
 container.innerHTML =
-`<div class="loading">Loading products...</div>`;
+`<div class="loading">No products yet.</div>`;
 }
 
 const { data, error } = await db
@@ -191,8 +220,8 @@ container.innerHTML =
 `<div class="loading">
         ${
           language === "ku"
-            ? "هیچ بەرهەمێک نەدۆزرایەوە."
-            : "No products found."
+            ? "هیچ بەرهەمێک نییە."
+            : "No products yet."
         }       </div>`;
 
 return;
@@ -443,9 +472,6 @@ const search =
 $("searchInput")?.value || ""
 ).toLowerCase();
 
-const category =
-$("categoryFilter")?.value || "all";
-
 const connection =
 $("connectionFilter")?.value || "all";
 
@@ -464,12 +490,6 @@ const text = `         ${product.name || ""}
 const searchMatch =
 text.includes(search);
 
-const categoryMatch =
-category === "all" ||
-String(product.category || "")
-.toLowerCase() ===
-category.toLowerCase();
-
 const connectionMatch =
 connection === "all" ||
 String(product.connection || "")
@@ -484,7 +504,6 @@ condition.toLowerCase();
 
 return (
 searchMatch &&
-categoryMatch &&
 connectionMatch &&
 conditionMatch
 );
@@ -1074,10 +1093,6 @@ $("searchInput")?.value ||
 ""
 ).toLowerCase();
 
-const category =
-$("categoryFilter")?.value ||
-"all";
-
 const connection =
 $("connectionFilter")?.value ||
 "all";
@@ -1098,12 +1113,6 @@ const text = `         ${product.name || ""}
 const searchMatch =
 text.includes(search);
 
-const categoryMatch =
-category === "all" ||
-String(product.category || "")
-.toLowerCase() ===
-category.toLowerCase();
-
 const connectionMatch =
 connection === "all" ||
 String(product.connection || "")
@@ -1118,7 +1127,6 @@ condition.toLowerCase();
 
 return (
 searchMatch &&
-categoryMatch &&
 connectionMatch &&
 conditionMatch
 );
@@ -1870,3 +1878,4 @@ openProductDetails;
 
 window.closeProductDetails =
 closeProductDetails;
+```
