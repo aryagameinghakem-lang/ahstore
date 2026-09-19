@@ -1096,21 +1096,28 @@ flex: 1;
 /* ================= ADMIN PRODUCT BUTTONS ================= */
 
 .admin-product-item button {
-min-height: 43px;
-padding: 0 16px;
-border-radius: 5px;
-border: 0;
+min-height: 48px;
+padding: 0 20px;
+border-radius: 7px;
+border: 1px solid rgba(0, 183, 255, 0.45);
 cursor: pointer;
-font-size: 12px;
+font-size: 13px;
 font-weight: 900;
-background: var(--blue);
+background: linear-gradient(135deg, #087cff, #00a9ff);
 color: white;
-transition: 0.2s;
+transition: 0.2s ease;
+box-shadow:
+0 0 10px rgba(0, 140, 255, 0.25),
+0 0 20px rgba(0, 120, 255, 0.12);
 }
 
 .admin-product-item button:hover {
-background: var(--blue2);
-box-shadow: 0 0 17px rgba(0, 145, 255, 0.3);
+background: linear-gradient(135deg, #168cff, #00b7ff);
+border-color: #00b7ff;
+box-shadow:
+0 0 14px rgba(0, 145, 255, 0.5),
+0 0 28px rgba(0, 140, 255, 0.25);
+transform: translateY(-1px);
 }
 
 .admin-product-item button:active {
