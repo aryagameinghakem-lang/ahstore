@@ -12,6 +12,7 @@ let cart = JSON.parse(localStorage.getItem("ahstore_cart") || "[]");
 let language = localStorage.getItem("ahstore_language") || "en";
 let editingId = null;
 let selectedProductId = null;
+let selectedCategory = "all";
 
 /* =========================
 HELPER
@@ -130,6 +131,32 @@ function setupButtons() {
     "change",
     filterProducts
   );
+
+  /* =========================
+  CUSTOMER CATEGORY BUTTONS
+  ========================= */
+
+  document
+    .querySelectorAll(".category-btn")
+    .forEach((button) => {
+      button.addEventListener(
+        "click",
+        () => {
+          selectedCategory =
+            button.dataset.category || "all";
+
+          document
+            .querySelectorAll(".category-btn")
+            .forEach((btn) => {
+              btn.classList.remove("active");
+            });
+
+          button.classList.add("active");
+
+          filterProducts();
+        }
+      );
+    });
 
   $("loginForm")?.addEventListener(
     "submit",
@@ -541,6 +568,101 @@ function formatCategory(category) {
 }
 
 /* =========================
+CUSTOMER CATEGORY GROUPS
+========================= */
+
+const customerCategoryGroups = {
+  phones: [
+    "iphone",
+    "android",
+    "ipad",
+    "tablet"
+  ],
+
+  laptops: [
+    "laptop",
+    "laptop cooling stand",
+    "phone cooling fan"
+  ],
+
+  watches: [
+    "apple watch",
+    "smart watch",
+    "android watch",
+    "normal watch"
+  ],
+
+  gaming: [
+    "keyboard",
+    "mouse",
+    "mousepad",
+    "headset",
+    "controller"
+  ],
+
+  audio: [
+    "mic",
+    "microphone",
+    "earphones",
+    "airpods",
+    "airbuds"
+  ],
+
+  cameras: [
+    "camera",
+    "dashcam"
+  ],
+
+  car: [
+    "obd car scanner"
+  ],
+
+  lighting: [
+    "led light",
+    "rgb led",
+    "flashlight"
+  ],
+
+  accessories: [
+    "powerbank"
+  ],
+
+  home: [
+    "air fryer",
+    "iron",
+    "vacuum"
+  ]
+};
+
+function matchesCustomerCategory(product) {
+  if (
+    selectedCategory === "all"
+  ) {
+    return true;
+  }
+
+  const category =
+    String(
+      product.category || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const group =
+    customerCategoryGroups[
+      selectedCategory
+    ];
+
+  if (!group) {
+    return true;
+  }
+
+  return group.includes(
+    category
+  );
+}
+
+/* =========================
 SEARCH / FILTER
 ========================= */
 
@@ -587,10 +709,16 @@ function filterProducts() {
         ).toLowerCase() ===
           condition.toLowerCase();
 
+      const categoryMatch =
+        matchesCustomerCategory(
+          product
+        );
+
       return (
         searchMatch &&
         connectionMatch &&
-        conditionMatch
+        conditionMatch &&
+        categoryMatch
       );
     });
 
@@ -646,10 +774,16 @@ function getFilteredProducts() {
         ).toLowerCase() ===
           condition.toLowerCase();
 
+      const categoryMatch =
+        matchesCustomerCategory(
+          product
+        );
+
       return (
         searchMatch &&
         connectionMatch &&
-        conditionMatch
+        conditionMatch &&
+        categoryMatch
       );
     }
   );
