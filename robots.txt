@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ahtech-git-main-ahne.vercel.app/sitemap.xml
