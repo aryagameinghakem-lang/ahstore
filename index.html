@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <meta name="description" content="AH STORE - Gaming gear in Kurdistan">
   <title>AH STORE | Gaming Gear</title>
@@ -44,6 +44,7 @@
 
     </div>
   </header>
+
 
 
   <!-- ================= MAIN ================= -->
@@ -87,6 +88,7 @@
     </section>
 
 
+
     <!-- PRODUCTS -->
     <section id="products" class="products-section">
 
@@ -100,6 +102,7 @@
           GAMING PRODUCTS
         </h2>
       </div>
+
 
 
       <div class="shop-controls">
@@ -232,6 +235,7 @@
       </div>
 
 
+
       <div id="productsGrid" class="products-grid">
 
         <div class="loading">
@@ -241,6 +245,7 @@
       </div>
 
     </section>
+
 
 
     <!-- ABOUT -->
@@ -281,6 +286,7 @@
   </main>
 
 
+
   <!-- ================= FOOTER ================= -->
   <footer>
 
@@ -293,6 +299,7 @@
     <p>© 2026 AH STORE</p>
 
   </footer>
+
 
 
   <!-- ================= CART ================= -->
@@ -315,7 +322,9 @@
     </div>
 
 
+
     <div id="cartItems"></div>
+
 
 
     <div class="cart-bottom">
@@ -347,6 +356,7 @@
   </aside>
 
 
+
   <!-- ================= PRODUCT DETAILS ================= -->
 
   <div
@@ -369,6 +379,7 @@
         </button>
 
 
+
         <div class="details-image-area">
 
           <img
@@ -386,6 +397,7 @@
         </div>
 
 
+
         <div class="details-content">
 
           <div
@@ -394,6 +406,7 @@
           ></div>
 
           <h2 id="detailsName"></h2>
+
 
 
           <div class="details-info">
@@ -409,6 +422,7 @@
           </div>
 
 
+
           <div class="details-price">
 
             <div
@@ -422,6 +436,7 @@
             ></div>
 
           </div>
+
 
 
           <button
@@ -440,6 +455,7 @@
   </div>
 
 
+
   <!-- ================= ADMIN ================= -->
 
   <div id="adminModal" class="modal hidden">
@@ -452,6 +468,7 @@
       >
         ✕
       </button>
+
 
 
       <!-- LOGIN -->
@@ -467,6 +484,7 @@
         </div>
 
 
+
         <form id="loginForm">
 
           <label>Email</label>
@@ -478,6 +496,7 @@
           >
 
 
+
           <label>Password</label>
 
           <input
@@ -485,6 +504,7 @@
             type="password"
             required
           >
+
 
 
           <button
@@ -495,6 +515,7 @@
           </button>
 
 
+
           <p
             id="loginMessage"
             class="form-message"
@@ -503,6 +524,7 @@
         </form>
 
       </div>
+
 
 
       <!-- ADMIN PANEL -->
@@ -529,12 +551,14 @@
         </div>
 
 
+
         <form id="productForm">
 
           <input
             id="productId"
             type="hidden"
           >
+
 
 
           <label>Product Name</label>
@@ -546,12 +570,14 @@
           >
 
 
+
           <label>Brand</label>
 
           <input
             id="productBrand"
             type="text"
           >
+
 
 
           <label>Category</label>
@@ -573,6 +599,7 @@
           </select>
 
 
+
           <div class="two-inputs">
 
             <div>
@@ -588,6 +615,7 @@
               >
 
             </div>
+
 
 
             <div>
@@ -607,6 +635,7 @@
           </div>
 
 
+
           <label>Connection</label>
 
           <select id="productConnection">
@@ -618,6 +647,7 @@
           </select>
 
 
+
           <label>Condition</label>
 
           <select id="productCondition" required>
@@ -627,6 +657,7 @@
             <option value="Open Box">Open Box</option>
 
           </select>
+
 
 
           <div id="switchField">
@@ -642,6 +673,7 @@
           </div>
 
 
+
           <label>Product Image</label>
 
           <input
@@ -651,11 +683,13 @@
           >
 
 
+
           <img
             id="imagePreview"
             class="image-preview hidden"
             alt="Preview"
           >
+
 
 
           <button
@@ -667,6 +701,7 @@
           </button>
 
 
+
           <button
             type="button"
             id="cancelEditBtn"
@@ -676,12 +711,14 @@
           </button>
 
 
+
           <p
             id="productMessage"
             class="form-message"
           ></p>
 
         </form>
+
 
 
         <div class="admin-products">
@@ -697,6 +734,7 @@
     </div>
 
   </div>
+
 
 
   <!-- SUPABASE -->
